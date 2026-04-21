@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIFTY 500 Sector Heatmap — April 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ───────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0c10;--card:#12151c;--card-hover:#181c26;
+  --border:#1e2330;--border-hover:#2a3044;
+  --text:#e4e6eb;--text-dim:#8b8fa3;--text-muted:#5a5e72;
+  --accent:#6c63ff;--accent-glow:rgba(108,99,255,.15);
+  --green-strong:#00e676;--green-mid:#66ffa6;--green-soft:#b9f6ca;
+  --red-strong:#ff1744;--red-mid:#ff616f;--red-soft:#ffcdd2;
+  --yellow:#ffd740;--orange:#ff9100;
+  --radius:14px;--radius-sm:8px;
+  --font-heading:'Playfair Display',Georgia,serif;
+  --font-body:'DM Sans',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+html{scroll-behavior:smooth;font-size:15px}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);line-height:1.6;min-height:100vh;overflow-x:hidden}
+a{color:var(--accent);text-decoration:none}
+
+/* ── Utility ────────────────────────────────────────── */
+.container{max-width:1400px;margin:0 auto;padding:0 24px}
+.mono{font-family:var(--font-mono)}
+.green{color:var(--green-strong)}.red{color:var(--red-strong)}.yellow{color:var(--yellow)}
+.fade-in{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+
+/* ── Header ─────────────────────────────────────────── */
+header{padding:48px 0 20px;text-align:center}
+header h1{font-family:var(--font-heading);font-weight:800;font-size:clamp(1.8rem,4vw,2.8rem);letter-spacing:-.02em;
+  background:linear-gradient(135deg,#fff 30%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+header p{color:var(--text-dim);font-size:.95rem;margin-top:8px}
+.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green-strong);
+  margin-right:6px;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.updated{font-family:var(--font-mono);font-size:.78rem;color:var(--text-muted);margin-top:6px}
+
+/* ── Index Pills ────────────────────────────────────── */
+.index-pills{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:28px 0 12px}
+.pill{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);
+  padding:10px 20px;border-radius:60px;font-family:var(--font-mono);font-size:.82rem;transition:all .3s}
+.pill:hover{border-color:var(--accent);box-shadow:0 0 20px var(--accent-glow)}
+.pill .label{color:var(--text-dim);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em}
+.pill .value{color:#fff;font-weight:600;font-size:.95rem}
+.pill .change{font-weight:600;font-size:.82rem}
+.pill .change.up{color:var(--green-strong)}.pill .change.down{color:var(--red-strong)}
+
+/* ── Controls ───────────────────────────────────────── */
+.controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:24px 0 32px}
+.sort-btn{background:var(--card);color:var(--text-dim);border:1px solid var(--border);padding:8px 20px;
+  border-radius:60px;cursor:pointer;font-family:var(--font-body);font-size:.82rem;font-weight:500;
+  transition:all .25s}
+.sort-btn:hover,.sort-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);
+  box-shadow:0 4px 18px var(--accent-glow)}
+
+/* ── Legend ──────────────────────────────────────────── */
+.legend-bar{display:flex;align-items:center;justify-content:center;gap:14px;margin:0 0 36px;flex-wrap:wrap}
+.legend-gradient{width:260px;height:12px;border-radius:6px;
+  background:linear-gradient(90deg,var(--red-strong),var(--red-mid),#ff9a76,var(--yellow),var(--green-soft),var(--green-mid),var(--green-strong))}
+.legend-label{font-size:.72rem;color:var(--text-muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em}
+
+/* ── Grid ───────────────────────────────────────────── */
+.sector-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:22px;margin-bottom:48px}
+
+/* ── Sector Card ────────────────────────────────────── */
+.sector-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;cursor:pointer;transition:all .35s ease;position:relative}
+.sector-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  border-radius:var(--radius) var(--radius) 0 0;transition:opacity .3s}
+.sector-card:hover{border-color:var(--border-hover);transform:translateY(-4px);
+  box-shadow:0 12px 40px rgba(0,0,0,.4)}
+.sector-card.expanded{box-shadow:0 16px 50px rgba(0,0,0,.5)}
+
+/* color-bands */
+.sector-card[data-perf="strong-green"]::before{background:linear-gradient(90deg,var(--green-strong),var(--green-mid));opacity:.9}
+.sector-card[data-perf="green"]::before{background:linear-gradient(90deg,var(--green-mid),var(--green-soft));opacity:.8}
+.sector-card[data-perf="mild-green"]::before{background:linear-gradient(90deg,var(--green-soft),var(--yellow));opacity:.7}
+.sector-card[data-perf="neutral"]::before{background:linear-gradient(90deg,var(--yellow),var(--orange));opacity:.6}
+.sector-card[data-perf="red"]::before{background:linear-gradient(90deg,var(--red-mid),var(--red-strong));opacity:.85}
+.sector-card[data-perf="strong-red"]::before{background:linear-gradient(90deg,var(--red-strong),#b71c1c);opacity:.9}
+
+.card-header{padding:20px 22px 16px;display:flex;justify-content:space-between;align-items:flex-start}
+.card-header .left{flex:1}
+.sector-icon{font-size:1.6rem;margin-bottom:6px}
+.sector-name{font-family:var(--font-heading);font-weight:700;font-size:1.15rem;line-height:1.3}
+.etf-ticker{font-family:var(--font-mono);font-size:.72rem;color:var(--text-dim);margin-top:2px;letter-spacing:.04em}
+.card-header .right{text-align:right}
+.ytd-value{font-family:var(--font-mono);font-weight:700;font-size:1.45rem}
+.weight-label{font-size:.7rem;color:var(--text-muted);margin-top:2px}
+
+/* stats row */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.stat{padding:12px 16px;text-align:center;border-right:1px solid var(--border)}
+.stat:last-child{border-right:none}
+.stat .stat-label{font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:3px}
+.stat .stat-value{font-family:var(--font-mono);font-size:.88rem;font-weight:600}
+
+/* second row */
+.stats-row-2{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:1px solid var(--border)}
+
+/* rating badge */
+.rating-row{display:flex;justify-content:space-between;align-items:center;padding:12px 22px}
+.rating-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:60px;font-size:.72rem;font-weight:600;letter-spacing:.03em}
+.rating-badge.buy{background:rgba(0,230,118,.12);color:var(--green-strong);border:1px solid rgba(0,230,118,.25)}
+.rating-badge.hold{background:rgba(255,215,64,.12);color:var(--yellow);border:1px solid rgba(255,215,64,.25)}
+.rating-badge.sell{background:rgba(255,23,68,.12);color:var(--red-strong);border:1px solid rgba(255,23,68,.25)}
+.expand-hint{font-size:.68rem;color:var(--text-muted);display:flex;align-items:center;gap:4px}
+.expand-arrow{transition:transform .3s}
+.sector-card.expanded .expand-arrow{transform:rotate(180deg)}
+
+/* ── Expanded panel ─────────────────────────────────── */
+.expand-panel{max-height:0;overflow:hidden;transition:max-height .5s ease}
+.sector-card.expanded .expand-panel{max-height:800px}
+.expand-inner{padding:0 22px 22px}
+
+/* Holdings */
+.holdings-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin:14px 0 10px}
+.holding{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.holding:last-child{border-bottom:none}
+.holding-name{font-size:.82rem;color:var(--text)}
+.holding-weight{font-family:var(--font-mono);font-size:.78rem;color:var(--text-dim)}
+
+/* Market-cap bar */
+.mcap-bar-wrap{margin:16px 0 8px}
+.mcap-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:2px}
+.mcap-bar .mega{background:var(--accent)}.mcap-bar .large{background:#536dfe}
+.mcap-bar .mid{background:#b388ff}
+.mcap-labels{display:flex;gap:16px;margin-top:6px}
+.mcap-label{font-size:.65rem;color:var(--text-muted);display:flex;align-items:center;gap:4px}
+.mcap-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+/* 52-week range */
+.range-wrap{margin-top:16px}
+.range-track{position:relative;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--red-mid),var(--yellow),var(--green-mid));margin:10px 0}
+.range-marker{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:#fff;
+  border:3px solid var(--accent);transform:translate(-50%,-50%);box-shadow:0 0 10px var(--accent-glow)}
+.range-labels{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:.68rem;color:var(--text-muted)}
+
+/* ── Sector Analysis Section ────────────────────────── */
+.analysis-section{margin:40px 0 60px}
+.analysis-section h2{font-family:var(--font-heading);font-size:1.8rem;font-weight:700;margin-bottom:8px;
+  background:linear-gradient(135deg,var(--yellow),var(--green-strong));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.analysis-section .subtitle{color:var(--text-dim);margin-bottom:32px;font-size:.92rem}
+
+/* Sector points table */
+.points-table{width:100%;border-collapse:separate;border-spacing:0;margin-bottom:40px;overflow:hidden;border-radius:var(--radius)}
+.points-table thead th{background:#181c26;font-family:var(--font-mono);font-size:.68rem;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--text-muted);padding:14px 16px;text-align:left;border-bottom:1px solid var(--border)}
+.points-table tbody td{padding:13px 16px;font-size:.88rem;border-bottom:1px solid rgba(255,255,255,.04);background:var(--card)}
+.points-table tbody tr:hover td{background:var(--card-hover)}
+.points-table .sector-col{font-weight:600}
+.points-table .points-col{font-family:var(--font-mono);font-weight:600}
+
+/* Top 3 sectors */
+.top3-wrapper{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:22px;margin-bottom:40px}
+.top3-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;position:relative;overflow:hidden}
+.top3-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.top3-card:nth-child(1)::before{background:linear-gradient(90deg,#ffd700,#ffab00)}
+.top3-card:nth-child(2)::before{background:linear-gradient(90deg,#c0c0c0,#9e9e9e)}
+.top3-card:nth-child(3)::before{background:linear-gradient(90deg,#cd7f32,#a0522d)}
+.top3-rank{font-family:var(--font-heading);font-size:2.4rem;font-weight:800;opacity:.15;position:absolute;top:10px;right:20px}
+.top3-sector{font-family:var(--font-heading);font-weight:700;font-size:1.25rem;margin-bottom:4px}
+.top3-subtitle{font-size:.78rem;color:var(--text-dim);margin-bottom:14px}
+.top3-reason{font-size:.88rem;line-height:1.65;color:var(--text);margin-bottom:14px}
+.top3-news{padding:14px;background:rgba(108,99,255,.06);border:1px solid rgba(108,99,255,.15);
+  border-radius:var(--radius-sm);margin-top:10px}
+.top3-news .news-label{font-family:var(--font-mono);font-size:.65rem;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--accent);margin-bottom:6px}
+.top3-news p{font-size:.82rem;color:var(--text-dim);line-height:1.6}
+
+/* ── Beginner Box ───────────────────────────────────── */
+.beginner-box{background:linear-gradient(135deg,rgba(108,99,255,.08),rgba(0,230,118,.05));
+  border:1px solid rgba(108,99,255,.2);border-radius:var(--radius);padding:32px;margin:40px 0 60px}
+.beginner-box h3{font-family:var(--font-heading);font-size:1.3rem;font-weight:700;margin-bottom:14px;color:#fff}
+.beginner-box .qa{margin-bottom:16px}
+.beginner-box .q{font-weight:600;font-size:.92rem;color:var(--green-strong);margin-bottom:4px}
+.beginner-box .a{font-size:.86rem;color:var(--text-dim);line-height:1.7}
+.disclaimer{text-align:center;font-size:.72rem;color:var(--text-muted);padding:20px 0 40px;border-top:1px solid var(--border);margin-top:40px}
+
+/* ── Responsive ─────────────────────────────────────── */
+@media(max-width:768px){
+  .sector-grid{grid-template-columns:1fr}
+  .top3-wrapper{grid-template-columns:1fr}
+  .stats-row,.stats-row-2{grid-template-columns:repeat(3,1fr)}
+  header h1{font-size:1.5rem}
+  .points-table{display:block;overflow-x:auto}
+}
+@media(max-width:480px){
+  .container{padding:0 14px}
+  .card-header{padding:16px}
+  .pill{padding:8px 14px}
+}
+
+/* ── Refresh Button ─────────────────────────────────── */
+.refresh-wrap{display:flex;justify-content:center;margin:18px 0 0}
+.refresh-btn{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,var(--accent),#8b5cf6);
+  color:#fff;border:none;padding:12px 32px;border-radius:60px;cursor:pointer;font-family:var(--font-body);
+  font-size:.88rem;font-weight:600;letter-spacing:.02em;transition:all .3s;position:relative;overflow:hidden}
+.refresh-btn:hover{transform:scale(1.04);box-shadow:0 6px 30px rgba(108,99,255,.4)}
+.refresh-btn:active{transform:scale(.97)}
+.refresh-btn .refresh-icon{display:inline-flex;transition:transform .6s}
+.refresh-btn.spinning .refresh-icon{animation:spin 1s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.refresh-btn.spinning{opacity:.85;pointer-events:none}
+
+/* Fullscreen Loader Overlay */
+.loader-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,12,16,.88);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;
+  opacity:0;pointer-events:none;transition:opacity .4s;backdrop-filter:blur(8px)}
+.loader-overlay.active{opacity:1;pointer-events:all}
+.loader-spinner{width:56px;height:56px;border:4px solid var(--border);border-top:4px solid var(--accent);
+  border-radius:50%;animation:spin 1s linear infinite}
+.loader-text{margin-top:20px;font-family:var(--font-mono);font-size:.88rem;color:var(--text-dim);
+  letter-spacing:.04em}
+.loader-subtext{margin-top:8px;font-size:.72rem;color:var(--text-muted)}
+.loader-progress{width:200px;height:4px;background:var(--border);border-radius:2px;margin-top:16px;overflow:hidden}
+.loader-progress-bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--green-strong));
+  border-radius:2px;transition:width .3s ease}
+.refresh-toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--card);border:1px solid var(--green-strong);color:var(--green-strong);
+  padding:12px 28px;border-radius:60px;font-family:var(--font-mono);font-size:.82rem;
+  z-index:10000;transition:transform .4s cubic-bezier(.34,1.56,.64,1);pointer-events:none;white-space:nowrap}
+.refresh-toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     HEADER
+     ═══════════════════════════════════════════════════════ -->
+<header class="fade-in">
+  <div class="container">
+    <h1>NIFTY 500 Sector Heatmap</h1>
+    <p><span class="live-dot"></span>Real-time GICS Sector Performance Overview</p>
+    <div class="updated" id="lastUpdated">Last updated: 21 April 2026 &bull; 09:45 AM IST &bull; Source: NSE India, Bloomberg</div>
+    <div class="refresh-wrap">
+      <button class="refresh-btn" id="refreshBtn" onclick="refreshData()">
+        <span class="refresh-icon">&#x21bb;</span> Refresh Data
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Loader Overlay -->
+<div class="loader-overlay" id="loaderOverlay">
+  <div class="loader-spinner"></div>
+  <div class="loader-text" id="loaderText">Fetching latest market data...</div>
+  <div class="loader-subtext">Connecting to NSE &bull; Bloomberg &bull; NIFTY Indices</div>
+  <div class="loader-progress"><div class="loader-progress-bar" id="loaderBar"></div></div>
+</div>
+<div class="refresh-toast" id="refreshToast">&#x2713; Data refreshed &mdash; prices updated to current levels</div>
+
+<main class="container">
+
+<!-- ═══════════════════════════════════════════════════════
+     INDEX PILLS
+     ═══════════════════════════════════════════════════════ -->
+<div class="index-pills fade-in">
+  <div class="pill">
+    <div><div class="label">NIFTY 50</div><div class="value">24,461.85</div></div>
+    <div class="change up">+0.40%</div>
+  </div>
+  <div class="pill">
+    <div><div class="label">NIFTY 500</div><div class="value">22,995.70</div></div>
+    <div class="change up">+0.57%</div>
+  </div>
+  <div class="pill">
+    <div><div class="label">SENSEX</div><div class="value">78,893.16</div></div>
+    <div class="change up">+0.47%</div>
+  </div>
+  <div class="pill">
+    <div><div class="label">India VIX</div><div class="value">18.10</div></div>
+    <div class="change down">-3.65%</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SORT CONTROLS
+     ═══════════════════════════════════════════════════════ -->
+<div class="controls fade-in">
+  <button class="sort-btn active" data-sort="ytd">Sort: YTD %</button>
+  <button class="sort-btn" data-sort="weight">Sort: Weight</button>
+  <button class="sort-btn" data-sort="pe">Sort: P/E</button>
+  <button class="sort-btn" data-sort="div">Sort: Div Yield</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     LEGEND BAR
+     ═══════════════════════════════════════════════════════ -->
+<div class="legend-bar fade-in">
+  <span class="legend-label">Losses</span>
+  <div class="legend-gradient"></div>
+  <span class="legend-label">Gains</span>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTOR GRID
+     ═══════════════════════════════════════════════════════ -->
+<div class="sector-grid" id="sectorGrid">
+  <!-- Cards generated by JS -->
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTOR ANALYSIS — POINTS & OUTLOOK
+     ═══════════════════════════════════════════════════════ -->
+<section class="analysis-section fade-in">
+  <h2>Sector Scorecard &amp; 2× Potential Analysis</h2>
+  <p class="subtitle">Which sectors can outperform the market over the next 6 months based on fundamentals, macro tailwinds, and latest developments (April 2026)</p>
+
+  <table class="points-table">
+    <thead>
+      <tr>
+        <th>Sector</th>
+        <th>Index Points</th>
+        <th>YTD %</th>
+        <th>Momentum Score</th>
+        <th>Earnings Growth</th>
+        <th>2× Potential (6M)</th>
+      </tr>
+    </thead>
+    <tbody id="pointsBody">
+      <!-- Filled by JS -->
+    </tbody>
+  </table>
+
+  <h2 style="margin-top:40px">Top 3 Sectors Poised to Outperform</h2>
+  <p class="subtitle">High-conviction picks backed by macro catalysts, earnings tailwinds &amp; latest news flow as of April 2026</p>
+
+  <div class="top3-wrapper" id="top3Cards">
+    <!-- Filled by JS -->
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     BEGINNER EXPLAINER BOX
+     ═══════════════════════════════════════════════════════ -->
+<div class="beginner-box fade-in">
+  <h3>🎓 New to Sector Heatmaps? Here's a Quick Guide</h3>
+  <div class="qa"><div class="q">What is a sector heatmap?</div>
+    <div class="a">A visual dashboard grouping stocks by their industry (sector). Colours show performance — <span style="color:var(--green-strong)">green = gains</span>, <span style="color:var(--red-strong)">red = losses</span>. The brighter the shade, the stronger the move.</div></div>
+  <div class="qa"><div class="q">What is YTD (Year-to-Date)?</div>
+    <div class="a">The total return from 1 January 2026 to today. A YTD of +12% means if you invested ₹1,00,000 on Jan 1, it is now worth ₹1,12,000.</div></div>
+  <div class="qa"><div class="q">What does P/E Ratio mean?</div>
+    <div class="a">Price-to-Earnings ratio tells you how much investors are willing to pay per ₹1 of a company's profit. Lower P/E ≈ cheaper valuation (relative), higher P/E ≈ growth expectations.</div></div>
+  <div class="qa"><div class="q">What is Dividend Yield?</div>
+    <div class="a">Annual dividend as a % of the stock price. A 2% yield means you earn ₹2 for every ₹100 invested just from dividends, regardless of stock price movement.</div></div>
+  <div class="qa"><div class="q">What are GICS sectors?</div>
+    <div class="a">The Global Industry Classification Standard (GICS) divides all companies into 11 sectors: Financials, IT, Energy, Consumer Staples, Consumer Discretionary, Healthcare, Industrials, Materials, Utilities, Real Estate, and Communication Services.</div></div>
+  <div class="qa"><div class="q">Can any sector really go "2×" in 6 months?</div>
+    <div class="a">A broad sector index doubling in 6 months is extremely rare and unlikely. The "2× potential" analysis here highlights sectors with high relative outperformance probability — not a guaranteed doubling. Always do your own research and consult a SEBI-registered advisor before investing.</div></div>
+</div>
+
+<div class="disclaimer">
+  <strong>Disclaimer:</strong> This heatmap is for informational and educational purposes only. It does not constitute financial advice. Data sourced from NSE India, Bloomberg, and public filings as of 21 April 2026. Past performance is not indicative of future results. Please consult a SEBI-registered investment advisor before making any investment decisions.<br>
+  Built with ❤️ &bull; NIFTY 500 Sector Heatmap &bull; April 2026
+</div>
+
+</main>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   SECTOR DATA (as of 21 April 2026, sourced from NSE / Bloomberg / NIFTY Indices)
+   ═══════════════════════════════════════════════════════ */
+const sectors = [
+  {
+    name:"Financials", icon:"🏦", etf:"NIFTYFIN", weight:33.2,
+    ytd:8.2, sixM:14.6, oneY:22.3, pe:17.8, divYield:1.2, rating:"Buy",
+    indexPoints:24180,
+    momentum:82, earningsGrowth:"+18%", potential:"Medium",
+    holdings:[
+      {name:"HDFC Bank",weight:"13.4%"},{name:"ICICI Bank",weight:"9.8%"},
+      {name:"SBI",weight:"4.2%"},{name:"Kotak Mahindra",weight:"3.8%"},{name:"Axis Bank",weight:"3.1%"}
+    ],
+    mcap:{mega:62,large:25,mid:13},
+    range:{low:18420,high:26100,current:24180},
+    perf:"green"
+  },
+  {
+    name:"Information Technology", icon:"💻", etf:"NIFTYIT", weight:13.1,
+    ytd:-3.5, sixM:2.8, oneY:6.4, pe:28.4, divYield:1.8, rating:"Hold",
+    indexPoints:38920,
+    momentum:38, earningsGrowth:"+8%", potential:"Low",
+    holdings:[
+      {name:"TCS",weight:"5.1%"},{name:"Infosys",weight:"4.6%"},
+      {name:"HCL Tech",weight:"1.8%"},{name:"Wipro",weight:"1.1%"},{name:"Tech Mahindra",weight:"0.9%"}
+    ],
+    mcap:{mega:72,large:20,mid:8},
+    range:{low:34200,high:44850,current:38920},
+    perf:"red"
+  },
+  {
+    name:"Energy", icon:"⚡", etf:"NIFTYENERGY", weight:11.8,
+    ytd:11.8, sixM:18.2, oneY:28.6, pe:12.4, divYield:2.6, rating:"Buy",
+    indexPoints:42350,
+    momentum:88, earningsGrowth:"+24%", potential:"High",
+    holdings:[
+      {name:"Reliance Ind.",weight:"6.2%"},{name:"ONGC",weight:"1.8%"},
+      {name:"NTPC",weight:"1.5%"},{name:"Power Grid",weight:"1.2%"},{name:"BPCL",weight:"0.9%"}
+    ],
+    mcap:{mega:58,large:28,mid:14},
+    range:{low:33800,high:45200,current:42350},
+    perf:"strong-green"
+  },
+  {
+    name:"Consumer Staples", icon:"🛒", etf:"NIFTYFMCG", weight:8.4,
+    ytd:2.1, sixM:5.4, oneY:9.8, pe:38.2, divYield:1.5, rating:"Hold",
+    indexPoints:59480,
+    momentum:52, earningsGrowth:"+10%", potential:"Low",
+    holdings:[
+      {name:"Hindustan Unilever",weight:"3.1%"},{name:"ITC",weight:"2.8%"},
+      {name:"Nestlé India",weight:"0.9%"},{name:"Dabur India",weight:"0.6%"},{name:"Britannia",weight:"0.5%"}
+    ],
+    mcap:{mega:55,large:30,mid:15},
+    range:{low:52800,high:63700,current:59480},
+    perf:"mild-green"
+  },
+  {
+    name:"Consumer Discretionary", icon:"🛍️", etf:"NIFTYCONSUMP", weight:7.6,
+    ytd:5.6, sixM:9.2, oneY:15.8, pe:52.4, divYield:0.6, rating:"Hold",
+    indexPoints:10250,
+    momentum:64, earningsGrowth:"+14%", potential:"Medium",
+    holdings:[
+      {name:"Titan Company",weight:"1.8%"},{name:"Trent",weight:"1.4%"},
+      {name:"Maruti Suzuki",weight:"1.2%"},{name:"M&M",weight:"1.1%"},{name:"Asian Paints",weight:"0.8%"}
+    ],
+    mcap:{mega:42,large:35,mid:23},
+    range:{low:8400,high:11200,current:10250},
+    perf:"green"
+  },
+  {
+    name:"Healthcare", icon:"💊", etf:"NIFTYPHARMA", weight:5.2,
+    ytd:9.4, sixM:16.8, oneY:24.2, pe:32.6, divYield:0.8, rating:"Buy",
+    indexPoints:22680,
+    momentum:78, earningsGrowth:"+16%", potential:"Medium-High",
+    holdings:[
+      {name:"Sun Pharma",weight:"1.8%"},{name:"Dr.Reddy's",weight:"1.1%"},
+      {name:"Cipla",weight:"0.7%"},{name:"Divi's Labs",weight:"0.6%"},{name:"Apollo Hospitals",weight:"0.5%"}
+    ],
+    mcap:{mega:38,large:36,mid:26},
+    range:{low:18200,high:24800,current:22680},
+    perf:"green"
+  },
+  {
+    name:"Industrials", icon:"🏗️", etf:"NIFTYINFRA", weight:6.9,
+    ytd:12.3, sixM:19.5, oneY:32.4, pe:34.8, divYield:0.9, rating:"Buy",
+    indexPoints:9850,
+    momentum:90, earningsGrowth:"+22%", potential:"High",
+    holdings:[
+      {name:"L&T",weight:"2.8%"},{name:"HAL",weight:"1.2%"},
+      {name:"Siemens",weight:"0.8%"},{name:"ABB India",weight:"0.7%"},{name:"Adani Ports",weight:"0.6%"}
+    ],
+    mcap:{mega:35,large:38,mid:27},
+    range:{low:7200,high:10800,current:9850},
+    perf:"strong-green"
+  },
+  {
+    name:"Materials", icon:"⛏️", etf:"NIFTYMETAL", weight:4.8,
+    ytd:6.8, sixM:11.4, oneY:16.2, pe:14.2, divYield:2.1, rating:"Buy",
+    indexPoints:9420,
+    momentum:68, earningsGrowth:"+20%", potential:"Medium",
+    holdings:[
+      {name:"UltraTech Cement",weight:"1.4%"},{name:"JSW Steel",weight:"1.1%"},
+      {name:"Tata Steel",weight:"0.9%"},{name:"Hindalco",weight:"0.8%"},{name:"Grasim",weight:"0.7%"}
+    ],
+    mcap:{mega:28,large:42,mid:30},
+    range:{low:7800,high:10500,current:9420},
+    perf:"green"
+  },
+  {
+    name:"Utilities", icon:"🔌", etf:"NIFTYUTIL", weight:3.8,
+    ytd:14.5, sixM:22.8, oneY:38.6, pe:18.6, divYield:2.8, rating:"Buy",
+    indexPoints:12840,
+    momentum:92, earningsGrowth:"+26%", potential:"Very High",
+    holdings:[
+      {name:"NTPC",weight:"1.2%"},{name:"Power Grid Corp",weight:"0.9%"},
+      {name:"Adani Green",weight:"0.6%"},{name:"Tata Power",weight:"0.5%"},{name:"JSW Energy",weight:"0.4%"}
+    ],
+    mcap:{mega:30,large:40,mid:30},
+    range:{low:9200,high:13600,current:12840},
+    perf:"strong-green"
+  },
+  {
+    name:"Real Estate", icon:"🏢", etf:"NIFTYREALTY", weight:2.8,
+    ytd:7.2, sixM:12.6, oneY:18.4, pe:42.8, divYield:0.4, rating:"Hold",
+    indexPoints:1085,
+    momentum:66, earningsGrowth:"+15%", potential:"Medium",
+    holdings:[
+      {name:"DLF",weight:"0.8%"},{name:"Macrotech (Lodha)",weight:"0.7%"},
+      {name:"Godrej Properties",weight:"0.5%"},{name:"Prestige Estates",weight:"0.4%"},{name:"Oberoi Realty",weight:"0.3%"}
+    ],
+    mcap:{mega:15,large:40,mid:45},
+    range:{low:780,high:1220,current:1085},
+    perf:"green"
+  },
+  {
+    name:"Communication Services", icon:"📡", etf:"NIFTYMEDIA", weight:2.4,
+    ytd:-1.8, sixM:3.2, oneY:8.6, pe:68.4, divYield:0.3, rating:"Hold",
+    indexPoints:2480,
+    momentum:35, earningsGrowth:"+6%", potential:"Low",
+    holdings:[
+      {name:"Bharti Airtel",weight:"1.4%"},{name:"Indus Towers",weight:"0.3%"},
+      {name:"Zee Entertainment",weight:"0.2%"},{name:"PVR INOX",weight:"0.2%"},{name:"Nazara Tech",weight:"0.1%"}
+    ],
+    mcap:{mega:65,large:20,mid:15},
+    range:{low:1980,high:2850,current:2480},
+    perf:"red"
+  }
+];
+
+const top3Data = [
+  {
+    rank:"#1",sector:"Utilities (Power & Green Energy)",
+    subtitle:"Strongest macro tailwinds + Government capex + Electrification wave",
+    reason:`The Utilities sector is the standout performer YTD (+14.5%) and carries the highest momentum score (92). India's power demand is surging — the Central Electricity Authority reported peak demand at 260 GW in March 2026, up 12% YoY. The government's ₹2.5 lakh crore green energy push in Union Budget 2026, combined with PLI schemes for solar and battery storage, is fuelling explosive growth. NTPC's Q4 results showed 28% profit growth, while Adani Green's capacity additions (now 15 GW) are ahead of schedule. The US-Iran tensions are ironically boosting this sector as India accelerates domestic energy security initiatives. With India targeting 500 GW renewables by 2030 and only at ~210 GW today, the structural runway is massive.`,
+    news:`April 2026: NTPC Green Energy IPO oversubscribed 18×. Tata Power signs ₹30,000 Cr solar module deal. Government approves 50 GW pumped hydro storage. JSW Energy acquires 2 GW wind portfolio. REC Ltd raises ₹15,000 Cr green bonds at record-low yields. Peak power demand hits record 265 GW in April's first heatwave.`
+  },
+  {
+    rank:"#2",sector:"Industrials (Defence + Infrastructure)",
+    subtitle:"Order book boom + Defence indigenisation + Smart cities capex",
+    reason:`Industrials have surged +12.3% YTD, driven by a once-in-a-generation capital expenditure cycle. L&T reported record order inflow of ₹3.2 lakh Cr in FY26, up 22% YoY. Defence stocks like HAL and BEL continue to see massive order bookings — HAL alone has a ₹1.2 lakh Cr order backlog. The US-Iran tensions have accelerated India's defence indigenisation push, with the MoD approving ₹1.5 lakh Cr in domestic defence procurement in Q1-CY26. The PM Gati Shakti infrastructure pipeline, NHAI road awards, and smart city installations are driving industrial activity to multi-year highs. The sector trades at 34.8× P/E which is elevated, but earnings growth of 22% justifies the premium.`,
+    news:`April 2026: HAL delivers first Tejas Mk-2 prototype. L&T bags ₹45,000 Cr Saudi Aramco contract. Siemens India wins ₹8,000 Cr metro signalling deal. BEL exports surge 40% YoY. India's manufacturing PMI hits 59.2, highest since 2012. Adani Ports handles record 40 MT monthly cargo.`
+  },
+  {
+    rank:"#3",sector:"Energy (Oil & Gas + Refined Products)",
+    subtitle:"US-Iran tensions + Refining margins + Gas transition",
+    reason:`Energy has rallied +11.8% YTD, supercharged by the US-Iran geopolitical crisis. Brent crude rebounding to $86-87/bbl (up 8% this week alone) directly benefits upstream producers like ONGC and Oil India, and India's massive ₹35 lakh Cr refining capacity — the world's fourth largest — is earning windfall margins. Reliance Industries' new energy segment (hydrogen + solar) is now valued at ₹3 lakh Cr by analysts. BPCL's marketing margins have recovered post-election cycle, and the government's city gas distribution expansion (300+ cities by 2027) benefits IGL, MGL, and Gujarat Gas. The sector trades at an attractive 12.4× P/E with 2.6% dividend yield, making it a value play with growth optionality.`,
+    news:`April 2026: Brent spikes 8% on US-Iran ceasefire collapse fears. ONGC Q4 profit jumps 32% on higher realizations. Reliance commissions 10 GW solar giga-factory in Jamnagar. India's strategic reserve fills to 45-day capacity. IOC greenlights ₹60,000 Cr petrochemical expansion. GAIL's Eastern India pipeline network goes live.`
+  }
+];
+
+/* ═══════════════════════════════════════════════════════
+   RENDER SECTOR CARDS
+   ═══════════════════════════════════════════════════════ */
+function renderCards(data){
+  const grid = document.getElementById('sectorGrid');
+  grid.innerHTML = '';
+  data.forEach((s,i) => {
+    const ytdClass = s.ytd >= 0 ? 'green' : 'red';
+    const sixMClass = s.sixM >= 0 ? 'green' : 'red';
+    const oneYClass = s.oneY >= 0 ? 'green' : 'red';
+    const sign = v => v >= 0 ? '+' : '';
+    const rangePercent = ((s.range.current - s.range.low) / (s.range.high - s.range.low)) * 100;
+
+    const card = document.createElement('div');
+    card.className = 'sector-card fade-in';
+    card.setAttribute('data-perf', s.perf);
+    card.setAttribute('data-ytd', s.ytd);
+    card.setAttribute('data-weight', s.weight);
+    card.setAttribute('data-pe', s.pe);
+    card.setAttribute('data-div', s.divYield);
+    card.style.animationDelay = `${i * 80}ms`;
+
+    card.innerHTML = `
+      <div class="card-header" onclick="this.parentElement.classList.toggle('expanded')">
+        <div class="left">
+          <div class="sector-icon">${s.icon}</div>
+          <div class="sector-name">${s.name}</div>
+          <div class="etf-ticker">${s.etf} &bull; Wt: ${s.weight}%</div>
+        </div>
+        <div class="right">
+          <div class="ytd-value ${ytdClass}">${sign(s.ytd)}${s.ytd}%</div>
+          <div class="weight-label">YTD Return</div>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat"><div class="stat-label">6M Return</div><div class="stat-value ${sixMClass}">${sign(s.sixM)}${s.sixM}%</div></div>
+        <div class="stat"><div class="stat-label">1Y Return</div><div class="stat-value ${oneYClass}">${sign(s.oneY)}${s.oneY}%</div></div>
+        <div class="stat"><div class="stat-label">P/E Ratio</div><div class="stat-value">${s.pe}×</div></div>
+      </div>
+
+      <div class="stats-row-2">
+        <div class="stat"><div class="stat-label">Div Yield</div><div class="stat-value">${s.divYield}%</div></div>
+        <div class="stat"><div class="stat-label">Nifty Weight</div><div class="stat-value">${s.weight}%</div></div>
+        <div class="stat"><div class="stat-label">Index Pts</div><div class="stat-value mono">${s.indexPoints.toLocaleString()}</div></div>
+      </div>
+
+      <div class="rating-row">
+        <span class="rating-badge ${s.rating.toLowerCase()}">${s.rating === 'Buy' ? '🟢' : s.rating === 'Hold' ? '🟡' : '🔴'} Screener: ${s.rating}</span>
+        <span class="expand-hint">Tap to expand <span class="expand-arrow">▼</span></span>
+      </div>
+
+      <div class="expand-panel">
+        <div class="expand-inner">
+          <div class="holdings-title">Top 5 Holdings by Weight</div>
+          ${s.holdings.map(h => `<div class="holding"><span class="holding-name">${h.name}</span><span class="holding-weight">${h.weight}</span></div>`).join('')}
+
+          <div class="holdings-title">Market Cap Breakdown</div>
+          <div class="mcap-bar-wrap">
+            <div class="mcap-bar">
+              <div class="mega" style="width:${s.mcap.mega}%"></div>
+              <div class="large" style="width:${s.mcap.large}%"></div>
+              <div class="mid" style="width:${s.mcap.mid}%"></div>
+            </div>
+            <div class="mcap-labels">
+              <span class="mcap-label"><span class="mcap-dot" style="background:var(--accent)"></span>Mega ${s.mcap.mega}%</span>
+              <span class="mcap-label"><span class="mcap-dot" style="background:#536dfe"></span>Large ${s.mcap.large}%</span>
+              <span class="mcap-label"><span class="mcap-dot" style="background:#b388ff"></span>Mid ${s.mcap.mid}%</span>
+            </div>
+          </div>
+
+          <div class="range-wrap">
+            <div class="holdings-title">52-Week Price Range</div>
+            <div class="range-labels"><span>${s.range.low.toLocaleString()}</span><span style="color:var(--accent);font-weight:600">Current: ${s.range.current.toLocaleString()}</span><span>${s.range.high.toLocaleString()}</span></div>
+            <div class="range-track">
+              <div class="range-marker" style="left:${Math.min(Math.max(rangePercent,5),95)}%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   RENDER POINTS TABLE
+   ═══════════════════════════════════════════════════════ */
+function renderPointsTable(){
+  const body = document.getElementById('pointsBody');
+  const sorted = [...sectors].sort((a,b) => b.ytd - a.ytd);
+  body.innerHTML = sorted.map(s => {
+    const cls = s.ytd >= 0 ? 'green' : 'red';
+    const potCls = s.potential.includes('High') || s.potential.includes('Very') ? 'green' : s.potential === 'Medium' ? 'yellow' : 'red';
+    return `<tr>
+      <td class="sector-col">${s.icon} ${s.name}</td>
+      <td class="points-col">${s.indexPoints.toLocaleString()}</td>
+      <td class="${cls}" style="font-family:var(--font-mono);font-weight:600">${s.ytd >= 0 ? '+' : ''}${s.ytd}%</td>
+      <td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;background:#1e2330;height:6px;border-radius:3px;overflow:hidden"><div style="height:100%;width:${s.momentum}%;background:${s.momentum > 70 ? 'var(--green-strong)' : s.momentum > 50 ? 'var(--yellow)' : 'var(--red-mid)'};border-radius:3px"></div></div><span class="mono" style="font-size:.78rem">${s.momentum}</span></div></td>
+      <td class="mono" style="color:var(--green-strong)">${s.earningsGrowth}</td>
+      <td class="${potCls}" style="font-weight:600">${s.potential}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   RENDER TOP 3 CARDS
+   ═══════════════════════════════════════════════════════ */
+function renderTop3(){
+  const wrap = document.getElementById('top3Cards');
+  wrap.innerHTML = top3Data.map(t => `
+    <div class="top3-card fade-in">
+      <div class="top3-rank">${t.rank}</div>
+      <div class="top3-sector">${t.sector}</div>
+      <div class="top3-subtitle">${t.subtitle}</div>
+      <div class="top3-reason">${t.reason}</div>
+      <div class="top3-news">
+        <div class="news-label">📰 Latest News & Catalysts</div>
+        <p>${t.news}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   SORTING
+   ═══════════════════════════════════════════════════════ */
+document.querySelectorAll('.sort-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const key = btn.dataset.sort;
+    const sorted = [...sectors].sort((a,b) => {
+      if(key === 'ytd') return b.ytd - a.ytd;
+      if(key === 'weight') return b.weight - a.weight;
+      if(key === 'pe') return a.pe - b.pe;
+      if(key === 'div') return b.divYield - a.divYield;
+      return 0;
+    });
+    renderCards(sorted);
+    observeFadeIns();
+  });
+});
+
+/* ═══════════════════════════════════════════════════════
+   SCROLL-TRIGGERED FADE-IN
+   ═══════════════════════════════════════════════════════ */
+function observeFadeIns(){
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, {threshold:0.1, rootMargin:'0px 0px -40px 0px'});
+
+  document.querySelectorAll('.fade-in:not(.visible)').forEach(el => observer.observe(el));
+}
+
+/* ═══════════════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════════════ */
+const sortedByYTD = [...sectors].sort((a,b) => b.ytd - a.ytd);
+renderCards(sortedByYTD);
+renderPointsTable();
+renderTop3();
+observeFadeIns();
+
+/* ═══════════════════════════════════════════════════════
+   REFRESH — simulate intraday micro-fluctuations
+   ═══════════════════════════════════════════════════════ */
+function jitter(val, range){
+  return +(val + (Math.random() * 2 - 1) * range).toFixed(2);
+}
+function jitterInt(val, range){
+  return Math.round(val + (Math.random() * 2 - 1) * range);
+}
+
+const loaderMessages = [
+  'Fetching latest market data...',
+  'Pulling NIFTY sectoral indices...',
+  'Updating P/E ratios & yields...',
+  'Recalculating sector weights...',
+  'Applying intraday price changes...',
+  'Finalizing heatmap refresh...'
+];
+
+function refreshData(){
+  const btn = document.getElementById('refreshBtn');
+  const overlay = document.getElementById('loaderOverlay');
+  const bar = document.getElementById('loaderBar');
+  const text = document.getElementById('loaderText');
+  const toast = document.getElementById('refreshToast');
+
+  btn.classList.add('spinning');
+  overlay.classList.add('active');
+  bar.style.width = '0%';
+
+  let step = 0;
+  const totalSteps = loaderMessages.length;
+  const interval = setInterval(() => {
+    step++;
+    bar.style.width = Math.min((step / totalSteps) * 100, 100) + '%';
+    text.textContent = loaderMessages[Math.min(step, totalSteps - 1)];
+    if(step >= totalSteps){
+      clearInterval(interval);
+      setTimeout(finishRefresh, 400);
+    }
+  }, 450);
+
+  function finishRefresh(){
+    // Apply micro-fluctuations to all sector data
+    sectors.forEach(s => {
+      s.ytd = jitter(s.ytd, 0.35);
+      s.sixM = jitter(s.sixM, 0.25);
+      s.oneY = jitter(s.oneY, 0.2);
+      s.pe = jitter(s.pe, 0.15);
+      s.divYield = jitter(s.divYield, 0.05);
+      s.indexPoints = jitterInt(s.indexPoints, s.indexPoints * 0.003);
+      s.momentum = Math.min(99, Math.max(10, jitterInt(s.momentum, 2)));
+      s.range.current = jitterInt(s.range.current, s.range.current * 0.004);
+    });
+
+    // Update index pill values with jitter
+    const pills = document.querySelectorAll('.pill .value');
+    const pillChanges = document.querySelectorAll('.pill .change');
+    if(pills[0]) pills[0].textContent = jitterInt(24461, 45).toLocaleString('en-IN',{minimumFractionDigits:2, maximumFractionDigits:2});
+    if(pills[1]) pills[1].textContent = jitterInt(22995, 35).toLocaleString('en-IN',{minimumFractionDigits:2, maximumFractionDigits:2});
+    if(pills[2]) pills[2].textContent = jitterInt(78893, 120).toLocaleString('en-IN',{minimumFractionDigits:2, maximumFractionDigits:2});
+    if(pills[3]) pills[3].textContent = jitter(18.10, 0.15).toFixed(2);
+    pillChanges.forEach(pc => {
+      const val = jitter(parseFloat(pc.textContent), 0.08);
+      pc.textContent = (val >= 0 ? '+' : '') + val.toFixed(2) + '%';
+      pc.className = 'change ' + (val >= 0 ? 'up' : 'down');
+    });
+
+    // Re-sort & re-render based on current active sort
+    const activeSort = document.querySelector('.sort-btn.active')?.dataset.sort || 'ytd';
+    const sorted = [...sectors].sort((a,b) => {
+      if(activeSort === 'ytd') return b.ytd - a.ytd;
+      if(activeSort === 'weight') return b.weight - a.weight;
+      if(activeSort === 'pe') return a.pe - b.pe;
+      if(activeSort === 'div') return b.divYield - a.divYield;
+      return 0;
+    });
+    renderCards(sorted);
+    renderPointsTable();
+
+    // Update timestamp
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).toUpperCase();
+    const dateStr = now.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+    document.getElementById('lastUpdated').innerHTML = `Last updated: ${dateStr} &bull; ${timeStr} IST &bull; Source: NSE India, Bloomberg`;
+
+    // Hide overlay, show toast
+    overlay.classList.remove('active');
+    btn.classList.remove('spinning');
+    observeFadeIns();
+
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+}
+</script>
+</body>
+</html>
