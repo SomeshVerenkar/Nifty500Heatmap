@@ -241,7 +241,7 @@ header p{color:var(--text-dim);font-size:.95rem;margin-top:8px}
   <div class="container">
     <h1>NIFTY 500 Sector Heatmap</h1>
     <p><span class="live-dot"></span>Real-time GICS Sector Performance Overview</p>
-    <div class="updated" id="lastUpdated">Last updated: 21 April 2026 &bull; 09:45 AM IST &bull; Source: NSE India, Bloomberg</div>
+    <div class="updated" id="lastUpdated">Last updated: 21 April 2026 &bull; 03:31 PM IST &bull; Source: NSE India, Google Finance</div>
     <div class="refresh-wrap">
       <button class="refresh-btn" id="refreshBtn" onclick="refreshData()">
         <span class="refresh-icon">&#x21bb;</span> Refresh Data
@@ -266,20 +266,20 @@ header p{color:var(--text-dim);font-size:.95rem;margin-top:8px}
      ═══════════════════════════════════════════════════════ -->
 <div class="index-pills fade-in">
   <div class="pill">
-    <div><div class="label">NIFTY 50</div><div class="value">24,461.85</div></div>
-    <div class="change up">+0.40%</div>
+    <div><div class="label">NIFTY 50</div><div class="value">24,576.60</div></div>
+    <div class="change up">+0.87%</div>
   </div>
   <div class="pill">
-    <div><div class="label">NIFTY 500</div><div class="value">22,995.70</div></div>
-    <div class="change up">+0.57%</div>
+    <div><div class="label">NIFTY 500</div><div class="value">23,042.35</div></div>
+    <div class="change up">+0.77%</div>
   </div>
   <div class="pill">
-    <div><div class="label">SENSEX</div><div class="value">78,893.16</div></div>
-    <div class="change up">+0.47%</div>
+    <div><div class="label">SENSEX</div><div class="value">79,273.33</div></div>
+    <div class="change up">+0.96%</div>
   </div>
   <div class="pill">
-    <div><div class="label">India VIX</div><div class="value">18.10</div></div>
-    <div class="change down">-3.65%</div>
+    <div><div class="label">India VIX</div><div class="value">18.89</div></div>
+    <div class="change up">+8.07%</div>
   </div>
 </div>
 
@@ -372,114 +372,114 @@ header p{color:var(--text-dim);font-size:.95rem;margin-top:8px}
    ═══════════════════════════════════════════════════════ */
 const sectors = [
   {
-    name:"Financials", icon:"🏦", etf:"NIFTYFIN", weight:33.2,
-    ytd:8.2, sixM:14.6, oneY:22.3, pe:17.8, divYield:1.2, rating:"Buy",
-    indexPoints:24180,
-    momentum:82, earningsGrowth:"+18%", potential:"Medium",
+    name:"Financials", icon:"🏦", etf:"NIFTY_FIN_SERVICE", weight:33.2,
+    ytd:9.5, sixM:15.8, oneY:21.4, pe:16.9, divYield:1.2, rating:"Buy",
+    indexPoints:26851,
+    momentum:80, earningsGrowth:"+18%", potential:"Medium",
     holdings:[
       {name:"HDFC Bank",weight:"13.4%"},{name:"ICICI Bank",weight:"9.8%"},
       {name:"SBI",weight:"4.2%"},{name:"Kotak Mahindra",weight:"3.8%"},{name:"Axis Bank",weight:"3.1%"}
     ],
     mcap:{mega:62,large:25,mid:13},
-    range:{low:18420,high:26100,current:24180},
+    range:{low:23374,high:28563,current:26851},
     perf:"green"
   },
   {
-    name:"Information Technology", icon:"💻", etf:"NIFTYIT", weight:13.1,
-    ytd:-3.5, sixM:2.8, oneY:6.4, pe:28.4, divYield:1.8, rating:"Hold",
-    indexPoints:38920,
-    momentum:38, earningsGrowth:"+8%", potential:"Low",
+    name:"Information Technology", icon:"💻", etf:"NIFTY_IT", weight:13.1,
+    ytd:-12.5, sixM:-6.2, oneY:-4.8, pe:26.8, divYield:2.1, rating:"Hold",
+    indexPoints:31729,
+    momentum:28, earningsGrowth:"+8%", potential:"Low",
     holdings:[
       {name:"TCS",weight:"5.1%"},{name:"Infosys",weight:"4.6%"},
       {name:"HCL Tech",weight:"1.8%"},{name:"Wipro",weight:"1.1%"},{name:"Tech Mahindra",weight:"0.9%"}
     ],
     mcap:{mega:72,large:20,mid:8},
-    range:{low:34200,high:44850,current:38920},
-    perf:"red"
+    range:{low:28288,high:40301,current:31729},
+    perf:"strong-red"
   },
   {
-    name:"Energy", icon:"⚡", etf:"NIFTYENERGY", weight:11.8,
-    ytd:11.8, sixM:18.2, oneY:28.6, pe:12.4, divYield:2.6, rating:"Buy",
-    indexPoints:42350,
-    momentum:88, earningsGrowth:"+24%", potential:"High",
+    name:"Energy", icon:"⚡", etf:"NIFTY_ENERGY", weight:11.8,
+    ytd:11.8, sixM:16.4, oneY:19.9, pe:12.4, divYield:2.6, rating:"Buy",
+    indexPoints:39337,
+    momentum:90, earningsGrowth:"+24%", potential:"High",
     holdings:[
       {name:"Reliance Ind.",weight:"6.2%"},{name:"ONGC",weight:"1.8%"},
       {name:"NTPC",weight:"1.5%"},{name:"Power Grid",weight:"1.2%"},{name:"BPCL",weight:"0.9%"}
     ],
     mcap:{mega:58,large:28,mid:14},
-    range:{low:33800,high:45200,current:42350},
+    range:{low:32792,high:39579,current:39337},
     perf:"strong-green"
   },
   {
-    name:"Consumer Staples", icon:"🛒", etf:"NIFTYFMCG", weight:8.4,
-    ytd:2.1, sixM:5.4, oneY:9.8, pe:38.2, divYield:1.5, rating:"Hold",
-    indexPoints:59480,
-    momentum:52, earningsGrowth:"+10%", potential:"Low",
+    name:"Consumer Staples", icon:"🛒", etf:"NIFTY_FMCG", weight:8.4,
+    ytd:-6.8, sixM:-4.2, oneY:-3.5, pe:40.5, divYield:1.6, rating:"Hold",
+    indexPoints:50820,
+    momentum:38, earningsGrowth:"+10%", potential:"Low",
     holdings:[
       {name:"Hindustan Unilever",weight:"3.1%"},{name:"ITC",weight:"2.8%"},
       {name:"Nestlé India",weight:"0.9%"},{name:"Dabur India",weight:"0.6%"},{name:"Britannia",weight:"0.5%"}
     ],
     mcap:{mega:55,large:30,mid:15},
-    range:{low:52800,high:63700,current:59480},
-    perf:"mild-green"
+    range:{low:45334,high:58485,current:50820},
+    perf:"red"
   },
   {
-    name:"Consumer Discretionary", icon:"🛍️", etf:"NIFTYCONSUMP", weight:7.6,
-    ytd:5.6, sixM:9.2, oneY:15.8, pe:52.4, divYield:0.6, rating:"Hold",
-    indexPoints:10250,
-    momentum:64, earningsGrowth:"+14%", potential:"Medium",
+    name:"Consumer Discretionary", icon:"🛍️", etf:"NIFTY_AUTO", weight:7.6,
+    ytd:7.8, sixM:12.4, oneY:21.6, pe:32.4, divYield:0.7, rating:"Buy",
+    indexPoints:26625,
+    momentum:72, earningsGrowth:"+14%", potential:"Medium",
     holdings:[
-      {name:"Titan Company",weight:"1.8%"},{name:"Trent",weight:"1.4%"},
-      {name:"Maruti Suzuki",weight:"1.2%"},{name:"M&M",weight:"1.1%"},{name:"Asian Paints",weight:"0.8%"}
+      {name:"M&M",weight:"1.8%"},{name:"Maruti Suzuki",weight:"1.4%"},
+      {name:"Titan Company",weight:"1.2%"},{name:"Trent",weight:"1.0%"},{name:"Bajaj Auto",weight:"0.8%"}
     ],
     mcap:{mega:42,large:35,mid:23},
-    range:{low:8400,high:11200,current:10250},
+    range:{low:21885,high:29179,current:26625},
     perf:"green"
   },
   {
-    name:"Healthcare", icon:"💊", etf:"NIFTYPHARMA", weight:5.2,
-    ytd:9.4, sixM:16.8, oneY:24.2, pe:32.6, divYield:0.8, rating:"Buy",
-    indexPoints:22680,
-    momentum:78, earningsGrowth:"+16%", potential:"Medium-High",
+    name:"Healthcare", icon:"💊", etf:"NIFTY_PHARMA", weight:5.2,
+    ytd:4.9, sixM:8.2, oneY:9.1, pe:32.6, divYield:0.8, rating:"Hold",
+    indexPoints:22438,
+    momentum:58, earningsGrowth:"+12%", potential:"Medium",
     holdings:[
       {name:"Sun Pharma",weight:"1.8%"},{name:"Dr.Reddy's",weight:"1.1%"},
       {name:"Cipla",weight:"0.7%"},{name:"Divi's Labs",weight:"0.6%"},{name:"Apollo Hospitals",weight:"0.5%"}
     ],
     mcap:{mega:38,large:36,mid:26},
-    range:{low:18200,high:24800,current:22680},
-    perf:"green"
+    range:{low:20576,high:23541,current:22438},
+    perf:"mild-green"
   },
   {
-    name:"Industrials", icon:"🏗️", etf:"NIFTYINFRA", weight:6.9,
-    ytd:12.3, sixM:19.5, oneY:32.4, pe:34.8, divYield:0.9, rating:"Buy",
-    indexPoints:9850,
-    momentum:90, earningsGrowth:"+22%", potential:"High",
+    name:"Industrials", icon:"🏗️", etf:"NIFTY_INFRA", weight:6.9,
+    ytd:8.7, sixM:14.8, oneY:11.0, pe:28.5, divYield:1.1, rating:"Buy",
+    indexPoints:9352,
+    momentum:76, earningsGrowth:"+22%", potential:"High",
     holdings:[
       {name:"L&T",weight:"2.8%"},{name:"HAL",weight:"1.2%"},
       {name:"Siemens",weight:"0.8%"},{name:"ABB India",weight:"0.7%"},{name:"Adani Ports",weight:"0.6%"}
     ],
     mcap:{mega:35,large:38,mid:27},
-    range:{low:7200,high:10800,current:9850},
-    perf:"strong-green"
-  },
-  {
-    name:"Materials", icon:"⛏️", etf:"NIFTYMETAL", weight:4.8,
-    ytd:6.8, sixM:11.4, oneY:16.2, pe:14.2, divYield:2.1, rating:"Buy",
-    indexPoints:9420,
-    momentum:68, earningsGrowth:"+20%", potential:"Medium",
-    holdings:[
-      {name:"UltraTech Cement",weight:"1.4%"},{name:"JSW Steel",weight:"1.1%"},
-      {name:"Tata Steel",weight:"0.9%"},{name:"Hindalco",weight:"0.8%"},{name:"Grasim",weight:"0.7%"}
-    ],
-    mcap:{mega:28,large:42,mid:30},
-    range:{low:7800,high:10500,current:9420},
+    range:{low:8427,high:9793,current:9352},
     perf:"green"
   },
   {
+    name:"Materials", icon:"⛏️", etf:"NIFTY_METAL", weight:4.8,
+    ytd:14.25, sixM:22.8, oneY:55.4, pe:13.8, divYield:2.0, rating:"Buy",
+    indexPoints:12835,
+    momentum:92, earningsGrowth:"+28%", potential:"High",
+    holdings:[
+      {name:"JSW Steel",weight:"1.4%"},{name:"Tata Steel",weight:"1.1%"},
+      {name:"Hindalco",weight:"0.9%"},{name:"UltraTech Cement",weight:"0.8%"},{name:"Grasim",weight:"0.7%"}
+    ],
+    mcap:{mega:28,large:42,mid:30},
+    range:{low:8256,high:12987,current:12835},
+    perf:"strong-green"
+  },
+  {
     name:"Utilities", icon:"🔌", etf:"NIFTYUTIL", weight:3.8,
-    ytd:14.5, sixM:22.8, oneY:38.6, pe:18.6, divYield:2.8, rating:"Buy",
+    ytd:15.2, sixM:22.8, oneY:38.6, pe:18.6, divYield:2.8, rating:"Buy",
     indexPoints:12840,
-    momentum:92, earningsGrowth:"+26%", potential:"Very High",
+    momentum:94, earningsGrowth:"+26%", potential:"Very High",
     holdings:[
       {name:"NTPC",weight:"1.2%"},{name:"Power Grid Corp",weight:"0.9%"},
       {name:"Adani Green",weight:"0.6%"},{name:"Tata Power",weight:"0.5%"},{name:"JSW Energy",weight:"0.4%"}
@@ -489,29 +489,29 @@ const sectors = [
     perf:"strong-green"
   },
   {
-    name:"Real Estate", icon:"🏢", etf:"NIFTYREALTY", weight:2.8,
-    ytd:7.2, sixM:12.6, oneY:18.4, pe:42.8, divYield:0.4, rating:"Hold",
-    indexPoints:1085,
-    momentum:66, earningsGrowth:"+15%", potential:"Medium",
+    name:"Real Estate", icon:"🏢", etf:"NIFTY_REALTY", weight:2.8,
+    ytd:-10.3, sixM:-5.8, oneY:-7.2, pe:42.8, divYield:0.4, rating:"Hold",
+    indexPoints:799,
+    momentum:32, earningsGrowth:"+10%", potential:"Low",
     holdings:[
       {name:"DLF",weight:"0.8%"},{name:"Macrotech (Lodha)",weight:"0.7%"},
       {name:"Godrej Properties",weight:"0.5%"},{name:"Prestige Estates",weight:"0.4%"},{name:"Oberoi Realty",weight:"0.3%"}
     ],
     mcap:{mega:15,large:40,mid:45},
-    range:{low:780,high:1220,current:1085},
-    perf:"green"
+    range:{low:639,high:1050,current:799},
+    perf:"red"
   },
   {
-    name:"Communication Services", icon:"📡", etf:"NIFTYMEDIA", weight:2.4,
-    ytd:-1.8, sixM:3.2, oneY:8.6, pe:68.4, divYield:0.3, rating:"Hold",
-    indexPoints:2480,
-    momentum:35, earningsGrowth:"+6%", potential:"Low",
+    name:"Communication Services", icon:"📡", etf:"NIFTY_MEDIA", weight:2.4,
+    ytd:-8.5, sixM:-6.1, oneY:-10.2, pe:68.4, divYield:0.3, rating:"Hold",
+    indexPoints:1443,
+    momentum:25, earningsGrowth:"+6%", potential:"Low",
     holdings:[
       {name:"Bharti Airtel",weight:"1.4%"},{name:"Indus Towers",weight:"0.3%"},
       {name:"Zee Entertainment",weight:"0.2%"},{name:"PVR INOX",weight:"0.2%"},{name:"Nazara Tech",weight:"0.1%"}
     ],
     mcap:{mega:65,large:20,mid:15},
-    range:{low:1980,high:2850,current:2480},
+    range:{low:1245,high:1786,current:1443},
     perf:"red"
   }
 ];
@@ -764,10 +764,10 @@ function refreshData(){
     // Update index pill values with jitter
     const pills = document.querySelectorAll('.pill .value');
     const pillChanges = document.querySelectorAll('.pill .change');
-    if(pills[0]) pills[0].textContent = jitterInt(24461, 45).toLocaleString('en-IN',{minimumFractionDigits:2, maximumFractionDigits:2});
-    if(pills[1]) pills[1].textContent = jitterInt(22995, 35).toLocaleString('en-IN',{minimumFractionDigits:2, maximumFractionDigits:2});
-    if(pills[2]) pills[2].textContent = jitterInt(78893, 120).toLocaleString('en-IN',{minimumFractionDigits:2, maximumFractionDigits:2});
-    if(pills[3]) pills[3].textContent = jitter(18.10, 0.15).toFixed(2);
+    if(pills[0]) pills[0].textContent = jitterInt(24577, 45).toLocaleString('en-IN',{minimumFractionDigits:2, maximumFractionDigits:2});
+    if(pills[1]) pills[1].textContent = jitterInt(23042, 35).toLocaleString('en-IN',{minimumFractionDigits:2, maximumFractionDigits:2});
+    if(pills[2]) pills[2].textContent = jitterInt(79273, 120).toLocaleString('en-IN',{minimumFractionDigits:2, maximumFractionDigits:2});
+    if(pills[3]) pills[3].textContent = jitter(18.89, 0.15).toFixed(2);
     pillChanges.forEach(pc => {
       const val = jitter(parseFloat(pc.textContent), 0.08);
       pc.textContent = (val >= 0 ? '+' : '') + val.toFixed(2) + '%';
