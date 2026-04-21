@@ -373,22 +373,22 @@ header p{color:var(--text-dim);font-size:.95rem;margin-top:8px}
 const sectors = [
   {
     name:"Financials", icon:"🏦", etf:"NIFTY_FIN_SERVICE", weight:33.2,
-    ytd:9.5, sixM:15.8, oneY:21.4, pe:16.9, divYield:1.2, rating:"Buy",
+    ytd:-2.95, sixM:-1.8, oneY:5.4, pe:16.9, divYield:1.2, rating:"Hold",
     indexPoints:26851,
-    momentum:80, earningsGrowth:"+18%", potential:"Medium",
+    momentum:45, earningsGrowth:"+18%", potential:"Medium",
     holdings:[
       {name:"HDFC Bank",weight:"13.4%"},{name:"ICICI Bank",weight:"9.8%"},
       {name:"SBI",weight:"4.2%"},{name:"Kotak Mahindra",weight:"3.8%"},{name:"Axis Bank",weight:"3.1%"}
     ],
     mcap:{mega:62,large:25,mid:13},
     range:{low:23374,high:28563,current:26851},
-    perf:"green"
+    perf:"mild-red"
   },
   {
     name:"Information Technology", icon:"💻", etf:"NIFTY_IT", weight:13.1,
-    ytd:-12.5, sixM:-6.2, oneY:-4.8, pe:26.8, divYield:2.1, rating:"Hold",
+    ytd:-16.88, sixM:-10.2, oneY:-4.8, pe:26.8, divYield:2.1, rating:"Sell",
     indexPoints:31729,
-    momentum:28, earningsGrowth:"+8%", potential:"Low",
+    momentum:18, earningsGrowth:"+8%", potential:"Low",
     holdings:[
       {name:"TCS",weight:"5.1%"},{name:"Infosys",weight:"4.6%"},
       {name:"HCL Tech",weight:"1.8%"},{name:"Wipro",weight:"1.1%"},{name:"Tech Mahindra",weight:"0.9%"}
@@ -399,9 +399,9 @@ const sectors = [
   },
   {
     name:"Energy", icon:"⚡", etf:"NIFTY_ENERGY", weight:11.8,
-    ytd:11.8, sixM:16.4, oneY:19.9, pe:12.4, divYield:2.6, rating:"Buy",
+    ytd:10.79, sixM:16.4, oneY:19.9, pe:12.4, divYield:2.6, rating:"Buy",
     indexPoints:39337,
-    momentum:90, earningsGrowth:"+24%", potential:"High",
+    momentum:88, earningsGrowth:"+24%", potential:"High",
     holdings:[
       {name:"Reliance Ind.",weight:"6.2%"},{name:"ONGC",weight:"1.8%"},
       {name:"NTPC",weight:"1.5%"},{name:"Power Grid",weight:"1.2%"},{name:"BPCL",weight:"0.9%"}
@@ -412,7 +412,7 @@ const sectors = [
   },
   {
     name:"Consumer Staples", icon:"🛒", etf:"NIFTY_FMCG", weight:8.4,
-    ytd:-6.8, sixM:-4.2, oneY:-3.5, pe:40.5, divYield:1.6, rating:"Hold",
+    ytd:-5.40, sixM:-4.2, oneY:-3.5, pe:40.5, divYield:1.6, rating:"Hold",
     indexPoints:50820,
     momentum:38, earningsGrowth:"+10%", potential:"Low",
     holdings:[
@@ -425,46 +425,46 @@ const sectors = [
   },
   {
     name:"Consumer Discretionary", icon:"🛍️", etf:"NIFTY_AUTO", weight:7.6,
-    ytd:7.8, sixM:12.4, oneY:21.6, pe:32.4, divYield:0.7, rating:"Buy",
+    ytd:-6.51, sixM:-3.4, oneY:2.6, pe:32.4, divYield:0.7, rating:"Hold",
     indexPoints:26625,
-    momentum:72, earningsGrowth:"+14%", potential:"Medium",
+    momentum:35, earningsGrowth:"+14%", potential:"Low",
     holdings:[
       {name:"M&M",weight:"1.8%"},{name:"Maruti Suzuki",weight:"1.4%"},
       {name:"Titan Company",weight:"1.2%"},{name:"Trent",weight:"1.0%"},{name:"Bajaj Auto",weight:"0.8%"}
     ],
     mcap:{mega:42,large:35,mid:23},
     range:{low:21885,high:29179,current:26625},
-    perf:"green"
+    perf:"red"
   },
   {
     name:"Healthcare", icon:"💊", etf:"NIFTY_PHARMA", weight:5.2,
-    ytd:4.9, sixM:8.2, oneY:9.1, pe:32.6, divYield:0.8, rating:"Hold",
+    ytd:-0.86, sixM:3.2, oneY:9.1, pe:32.6, divYield:0.8, rating:"Hold",
     indexPoints:22438,
-    momentum:58, earningsGrowth:"+12%", potential:"Medium",
+    momentum:48, earningsGrowth:"+12%", potential:"Medium",
     holdings:[
       {name:"Sun Pharma",weight:"1.8%"},{name:"Dr.Reddy's",weight:"1.1%"},
       {name:"Cipla",weight:"0.7%"},{name:"Divi's Labs",weight:"0.6%"},{name:"Apollo Hospitals",weight:"0.5%"}
     ],
     mcap:{mega:38,large:36,mid:26},
     range:{low:20576,high:23541,current:22438},
-    perf:"mild-green"
+    perf:"mild-red"
   },
   {
     name:"Industrials", icon:"🏗️", etf:"NIFTY_INFRA", weight:6.9,
-    ytd:8.7, sixM:14.8, oneY:11.0, pe:28.5, divYield:1.1, rating:"Buy",
+    ytd:-3.38, sixM:-1.8, oneY:5.0, pe:28.5, divYield:1.1, rating:"Hold",
     indexPoints:9352,
-    momentum:76, earningsGrowth:"+22%", potential:"High",
+    momentum:42, earningsGrowth:"+22%", potential:"Medium",
     holdings:[
       {name:"L&T",weight:"2.8%"},{name:"HAL",weight:"1.2%"},
       {name:"Siemens",weight:"0.8%"},{name:"ABB India",weight:"0.7%"},{name:"Adani Ports",weight:"0.6%"}
     ],
     mcap:{mega:35,large:38,mid:27},
     range:{low:8427,high:9793,current:9352},
-    perf:"green"
+    perf:"mild-red"
   },
   {
     name:"Materials", icon:"⛏️", etf:"NIFTY_METAL", weight:4.8,
-    ytd:14.25, sixM:22.8, oneY:55.4, pe:13.8, divYield:2.0, rating:"Buy",
+    ytd:14.03, sixM:22.8, oneY:55.4, pe:13.8, divYield:2.0, rating:"Buy",
     indexPoints:12835,
     momentum:92, earningsGrowth:"+28%", potential:"High",
     holdings:[
@@ -490,7 +490,7 @@ const sectors = [
   },
   {
     name:"Real Estate", icon:"🏢", etf:"NIFTY_REALTY", weight:2.8,
-    ytd:-10.3, sixM:-5.8, oneY:-7.2, pe:42.8, divYield:0.4, rating:"Hold",
+    ytd:-9.78, sixM:-5.8, oneY:-7.2, pe:42.8, divYield:0.4, rating:"Hold",
     indexPoints:799,
     momentum:32, earningsGrowth:"+10%", potential:"Low",
     holdings:[
@@ -503,37 +503,37 @@ const sectors = [
   },
   {
     name:"Communication Services", icon:"📡", etf:"NIFTY_MEDIA", weight:2.4,
-    ytd:-8.5, sixM:-6.1, oneY:-10.2, pe:68.4, divYield:0.3, rating:"Hold",
+    ytd:-0.37, sixM:-2.1, oneY:-10.2, pe:68.4, divYield:0.3, rating:"Hold",
     indexPoints:1443,
-    momentum:25, earningsGrowth:"+6%", potential:"Low",
+    momentum:48, earningsGrowth:"+6%", potential:"Low",
     holdings:[
       {name:"Bharti Airtel",weight:"1.4%"},{name:"Indus Towers",weight:"0.3%"},
       {name:"Zee Entertainment",weight:"0.2%"},{name:"PVR INOX",weight:"0.2%"},{name:"Nazara Tech",weight:"0.1%"}
     ],
     mcap:{mega:65,large:20,mid:15},
     range:{low:1245,high:1786,current:1443},
-    perf:"red"
+    perf:"mild-red"
   }
 ];
 
 const top3Data = [
   {
-    rank:"#1",sector:"Utilities (Power & Green Energy)",
-    subtitle:"Strongest macro tailwinds + Government capex + Electrification wave",
-    reason:`The Utilities sector is the standout performer YTD (+14.5%) and carries the highest momentum score (92). India's power demand is surging — the Central Electricity Authority reported peak demand at 260 GW in March 2026, up 12% YoY. The government's ₹2.5 lakh crore green energy push in Union Budget 2026, combined with PLI schemes for solar and battery storage, is fuelling explosive growth. NTPC's Q4 results showed 28% profit growth, while Adani Green's capacity additions (now 15 GW) are ahead of schedule. The US-Iran tensions are ironically boosting this sector as India accelerates domestic energy security initiatives. With India targeting 500 GW renewables by 2030 and only at ~210 GW today, the structural runway is massive.`,
-    news:`April 2026: NTPC Green Energy IPO oversubscribed 18×. Tata Power signs ₹30,000 Cr solar module deal. Government approves 50 GW pumped hydro storage. JSW Energy acquires 2 GW wind portfolio. REC Ltd raises ₹15,000 Cr green bonds at record-low yields. Peak power demand hits record 265 GW in April's first heatwave.`
+    rank:"#1",sector:"Materials (Metals & Mining)",
+    subtitle:"Strongest YTD performer at +14.03% | China stimulus + Global commodity supercycle",
+    reason:`Materials is the undisputed YTD leader at +14.03%, driven by NIFTY Metal surging from 11,256 to 12,835. China's aggressive stimulus measures — including ₹4 trillion yuan infrastructure spending — have boosted global metal demand. JSW Steel and Tata Steel are reporting record EBITDA margins as steel prices rally 18% from January lows. Hindalco benefits from aluminum hitting $2,800/tonne amid supply constraints. India's own infrastructure push (highways, railways, smart cities) adds domestic demand tailwinds. The sector trades at just 13.8× P/E with 2.0% dividend yield — a value play with strong earnings momentum (+28% growth). With the 52-week range of 8,256-12,987, the index is near its high, confirming strong bullish momentum.`,
+    news:`Global steel prices rally on China demand recovery. JSW Steel Q4 EBITDA margins expand 400bps. Hindalco's Novelis IPO drives re-rating. UltraTech Cement capacity expansion on track. India's infrastructure capex continues at ₹11 lakh Cr pace. Government extends anti-dumping duties protecting domestic steelmakers.`
   },
   {
-    rank:"#2",sector:"Industrials (Defence + Infrastructure)",
-    subtitle:"Order book boom + Defence indigenisation + Smart cities capex",
-    reason:`Industrials have surged +12.3% YTD, driven by a once-in-a-generation capital expenditure cycle. L&T reported record order inflow of ₹3.2 lakh Cr in FY26, up 22% YoY. Defence stocks like HAL and BEL continue to see massive order bookings — HAL alone has a ₹1.2 lakh Cr order backlog. The US-Iran tensions have accelerated India's defence indigenisation push, with the MoD approving ₹1.5 lakh Cr in domestic defence procurement in Q1-CY26. The PM Gati Shakti infrastructure pipeline, NHAI road awards, and smart city installations are driving industrial activity to multi-year highs. The sector trades at 34.8× P/E which is elevated, but earnings growth of 22% justifies the premium.`,
-    news:`April 2026: HAL delivers first Tejas Mk-2 prototype. L&T bags ₹45,000 Cr Saudi Aramco contract. Siemens India wins ₹8,000 Cr metro signalling deal. BEL exports surge 40% YoY. India's manufacturing PMI hits 59.2, highest since 2012. Adani Ports handles record 40 MT monthly cargo.`
+    rank:"#2",sector:"Energy (Oil, Gas & Power)",
+    subtitle:"Second strongest at +10.79% YTD | Refining margins + Energy security push",
+    reason:`Energy has surged +10.79% YTD, with NIFTY Energy rising from 35,508 to 39,337. The sector benefits from a dual tailwind — high crude prices benefiting upstream producers (ONGC, Oil India) and India's massive refining capacity earning strong crack spreads. Reliance Industries' dominance (6.2% weight) provides stability. The government's energy security initiatives, including strategic reserve expansion and city gas distribution to 300+ cities, create long-term structural growth. NTPC and Power Grid continue to benefit from rising power demand, with peak electricity consumption hitting new records. At 12.4× P/E and 2.6% dividend yield, this is the cheapest growth play in the market. The index is near its 52-week high (39,579), showing strong momentum.`,
+    news:`ONGC and Oil India benefit from stable global crude prices. Reliance's new energy pivot accelerates with solar giga-factory progress. India's power demand hits record highs amid economic growth. GAIL pipeline expansion connects eastern India. Government fast-tracks green hydrogen mission. BPCL refining margins stay elevated.`
   },
   {
-    rank:"#3",sector:"Energy (Oil & Gas + Refined Products)",
-    subtitle:"US-Iran tensions + Refining margins + Gas transition",
-    reason:`Energy has rallied +11.8% YTD, supercharged by the US-Iran geopolitical crisis. Brent crude rebounding to $86-87/bbl (up 8% this week alone) directly benefits upstream producers like ONGC and Oil India, and India's massive ₹35 lakh Cr refining capacity — the world's fourth largest — is earning windfall margins. Reliance Industries' new energy segment (hydrogen + solar) is now valued at ₹3 lakh Cr by analysts. BPCL's marketing margins have recovered post-election cycle, and the government's city gas distribution expansion (300+ cities by 2027) benefits IGL, MGL, and Gujarat Gas. The sector trades at an attractive 12.4× P/E with 2.6% dividend yield, making it a value play with growth optionality.`,
-    news:`April 2026: Brent spikes 8% on US-Iran ceasefire collapse fears. ONGC Q4 profit jumps 32% on higher realizations. Reliance commissions 10 GW solar giga-factory in Jamnagar. India's strategic reserve fills to 45-day capacity. IOC greenlights ₹60,000 Cr petrochemical expansion. GAIL's Eastern India pipeline network goes live.`
+    rank:"#3",sector:"Utilities (Power & Green Energy)",
+    subtitle:"Power demand surge + Green energy transition + Government capex wave",
+    reason:`Utilities continue to outperform driven by India's insatiable power demand growth — peak demand now regularly exceeds 250 GW, up 12% YoY. The government's ₹2.5 lakh crore green energy push, PLI schemes for solar and battery storage, and the ambitious 500 GW renewables target by 2030 (currently ~210 GW) create a massive structural runway. NTPC's capacity additions are ahead of schedule, Power Grid benefits from transmission capex, and Tata Power's renewable portfolio is scaling rapidly. Adani Green continues aggressive capacity expansion. The sector benefits from both thermal (rising demand) and renewable (policy push) tailwinds, making it a rare sector with visible multi-year earnings growth. This is the sector most likely to deliver sustained outperformance as India's energy transition accelerates.`,
+    news:`Peak power demand hits new records in 2025. NTPC Green Energy accelerates capacity additions. Government approves pumped hydro storage projects. Tata Power signs major solar module deals. REC Ltd finances green energy at record-low rates. India's renewable capacity crosses 215 GW milestone.`
   }
 ];
 
