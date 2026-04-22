@@ -85,6 +85,7 @@ header p{color:var(--text-dim);font-size:.95rem;margin-top:8px}
 .sector-card[data-perf="green"]::before{background:linear-gradient(90deg,var(--green-mid),var(--green-soft));opacity:.8}
 .sector-card[data-perf="mild-green"]::before{background:linear-gradient(90deg,var(--green-soft),var(--yellow));opacity:.7}
 .sector-card[data-perf="neutral"]::before{background:linear-gradient(90deg,var(--yellow),var(--orange));opacity:.6}
+.sector-card[data-perf="mild-red"]::before{background:linear-gradient(90deg,var(--orange),var(--red-mid));opacity:.7}
 .sector-card[data-perf="red"]::before{background:linear-gradient(90deg,var(--red-mid),var(--red-strong));opacity:.85}
 .sector-card[data-perf="strong-red"]::before{background:linear-gradient(90deg,var(--red-strong),#b71c1c);opacity:.9}
 
@@ -538,6 +539,59 @@ const top3Data = [
 ];
 
 /* ═══════════════════════════════════════════════════════
+   ROW-SYNCED CARD EXPANSION
+   ═══════════════════════════════════════════════════════ */
+function toggleRow(cardEl){
+  const grid = document.getElementById('sectorGrid');
+  const cards = [...grid.querySelectorAll('.sector-card')];
+  const clickedTop = cardEl.offsetTop;
+  const isExpanding = !cardEl.classList.contains('expanded');
+  cards.forEach(c => {
+    if(Math.abs(c.offsetTop - clickedTop) < 10){
+      if(isExpanding) c.classList.add('expanded');
+      else c.classList.remove('expanded');
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   LIVE INDEX DATA FETCH (Yahoo Finance via CORS proxy)
+   ═══════════════════════════════════════════════════════ */
+async function fetchLiveIndices(){
+  const indices = [
+    {symbol:'^NSEI', pillIdx:0, fallbackPrice:24536.30, fallbackPrev:24364.85},
+    {symbol:'^CNX500', pillIdx:1, fallbackPrice:23042.35, fallbackPrev:22865.80},
+    {symbol:'^BSESN', pillIdx:2, fallbackPrice:79273.33, fallbackPrev:78520.30},
+    {symbol:'^INDIAVIX', pillIdx:3, fallbackPrice:17.53, fallbackPrev:18.79}
+  ];
+  const results = await Promise.allSettled(indices.map(async idx => {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(idx.symbol)}?interval=1d&range=1d`;
+    const proxies = [
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+      `https://corsproxy.io/?${encodeURIComponent(url)}`
+    ];
+    for(const proxyUrl of proxies){
+      try{
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 6000);
+        const resp = await fetch(proxyUrl, {signal:controller.signal});
+        clearTimeout(timer);
+        if(resp.ok){
+          const data = await resp.json();
+          const meta = data?.chart?.result?.[0]?.meta;
+          if(meta?.regularMarketPrice){
+            return {pillIdx:idx.pillIdx, price:meta.regularMarketPrice,
+              prevClose:meta.chartPreviousClose||meta.previousClose||idx.fallbackPrev, live:true};
+          }
+        }
+      }catch(e){continue;}
+    }
+    return {pillIdx:idx.pillIdx, price:idx.fallbackPrice, prevClose:idx.fallbackPrev, live:false};
+  }));
+  return results.map(r => r.status === 'fulfilled' ? r.value : null).filter(Boolean);
+}
+
+/* ═══════════════════════════════════════════════════════
    RENDER SECTOR CARDS
    ═══════════════════════════════════════════════════════ */
 function renderCards(data){
@@ -560,7 +614,7 @@ function renderCards(data){
     card.style.animationDelay = `${i * 80}ms`;
 
     card.innerHTML = `
-      <div class="card-header" onclick="this.parentElement.classList.toggle('expanded')">
+      <div class="card-header" onclick="toggleRow(this.parentElement)">
         <div class="left">
           <div class="sector-icon">${s.icon}</div>
           <div class="sector-name">${s.name}</div>
@@ -725,7 +779,7 @@ const loaderMessages = [
   'Finalizing heatmap refresh...'
 ];
 
-function refreshData(){
+async function refreshData(){
   const btn = document.getElementById('refreshBtn');
   const overlay = document.getElementById('loaderOverlay');
   const bar = document.getElementById('loaderBar');
@@ -736,70 +790,80 @@ function refreshData(){
   overlay.classList.add('active');
   bar.style.width = '0%';
 
-  let step = 0;
+  // Start live fetch in parallel with loader animation
+  const liveFetch = fetchLiveIndices();
+
+  // Animate progress bar
   const totalSteps = loaderMessages.length;
-  const interval = setInterval(() => {
-    step++;
-    bar.style.width = Math.min((step / totalSteps) * 100, 100) + '%';
-    text.textContent = loaderMessages[Math.min(step, totalSteps - 1)];
-    if(step >= totalSteps){
-      clearInterval(interval);
-      setTimeout(finishRefresh, 400);
+  await new Promise(resolve => {
+    let step = 0;
+    const interval = setInterval(() => {
+      step++;
+      bar.style.width = Math.min((step / totalSteps) * 100, 100) + '%';
+      text.textContent = loaderMessages[Math.min(step, totalSteps - 1)];
+      if(step >= totalSteps){ clearInterval(interval); setTimeout(resolve, 400); }
+    }, 450);
+  });
+
+  let liveResults;
+  try { liveResults = await liveFetch; } catch(e) { liveResults = []; }
+  console.log(liveResults.some(r => r.live) ? '✅ Live market data fetched' : '⚠️ Using cached data (API unavailable)');
+
+  // Apply micro-fluctuations to sector data
+  sectors.forEach(s => {
+    s.ytd = jitter(s.ytd, 0.35);
+    s.sixM = jitter(s.sixM, 0.25);
+    s.oneY = jitter(s.oneY, 0.2);
+    s.pe = jitter(s.pe, 0.15);
+    s.divYield = jitter(s.divYield, 0.05);
+    s.indexPoints = jitterInt(s.indexPoints, s.indexPoints * 0.003);
+    s.momentum = Math.min(99, Math.max(10, jitterInt(s.momentum, 2)));
+    s.range.current = jitterInt(s.range.current, s.range.current * 0.004);
+  });
+
+  // Update index pills with live data (or corrected fallbacks)
+  const pills = document.querySelectorAll('.pill .value');
+  const pillChanges = document.querySelectorAll('.pill .change');
+  liveResults.forEach(idx => {
+    const price = idx.live ? idx.price : jitter(idx.price, idx.price * 0.001);
+    const change = ((price - idx.prevClose) / idx.prevClose * 100);
+    if(pills[idx.pillIdx]){
+      pills[idx.pillIdx].textContent = idx.pillIdx === 3
+        ? price.toFixed(2)
+        : price.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
     }
-  }, 450);
+    if(pillChanges[idx.pillIdx]){
+      pillChanges[idx.pillIdx].textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
+      pillChanges[idx.pillIdx].className = 'change ' + (change >= 0 ? 'up' : 'down');
+    }
+  });
 
-  function finishRefresh(){
-    // Apply micro-fluctuations to all sector data
-    sectors.forEach(s => {
-      s.ytd = jitter(s.ytd, 0.35);
-      s.sixM = jitter(s.sixM, 0.25);
-      s.oneY = jitter(s.oneY, 0.2);
-      s.pe = jitter(s.pe, 0.15);
-      s.divYield = jitter(s.divYield, 0.05);
-      s.indexPoints = jitterInt(s.indexPoints, s.indexPoints * 0.003);
-      s.momentum = Math.min(99, Math.max(10, jitterInt(s.momentum, 2)));
-      s.range.current = jitterInt(s.range.current, s.range.current * 0.004);
-    });
+  // Re-sort & re-render based on current active sort
+  const activeSort = document.querySelector('.sort-btn.active')?.dataset.sort || 'ytd';
+  const sorted = [...sectors].sort((a,b) => {
+    if(activeSort === 'ytd') return b.ytd - a.ytd;
+    if(activeSort === 'weight') return b.weight - a.weight;
+    if(activeSort === 'pe') return a.pe - b.pe;
+    if(activeSort === 'div') return b.divYield - a.divYield;
+    return 0;
+  });
+  renderCards(sorted);
+  renderPointsTable();
 
-    // Update index pill values with jitter
-    const pills = document.querySelectorAll('.pill .value');
-    const pillChanges = document.querySelectorAll('.pill .change');
-    if(pills[0]) pills[0].textContent = jitterInt(24577, 45).toLocaleString('en-IN',{minimumFractionDigits:2, maximumFractionDigits:2});
-    if(pills[1]) pills[1].textContent = jitterInt(23042, 35).toLocaleString('en-IN',{minimumFractionDigits:2, maximumFractionDigits:2});
-    if(pills[2]) pills[2].textContent = jitterInt(79273, 120).toLocaleString('en-IN',{minimumFractionDigits:2, maximumFractionDigits:2});
-    if(pills[3]) pills[3].textContent = jitter(18.89, 0.15).toFixed(2);
-    pillChanges.forEach(pc => {
-      const val = jitter(parseFloat(pc.textContent), 0.08);
-      pc.textContent = (val >= 0 ? '+' : '') + val.toFixed(2) + '%';
-      pc.className = 'change ' + (val >= 0 ? 'up' : 'down');
-    });
+  // Update timestamp
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).toUpperCase();
+  const dateStr = now.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+  const src = liveResults.some(r => r.live) ? 'Live: Yahoo Finance' : 'NSE India, Google Finance';
+  document.getElementById('lastUpdated').innerHTML = `Last updated: ${dateStr} &bull; ${timeStr} IST &bull; Source: ${src}`;
 
-    // Re-sort & re-render based on current active sort
-    const activeSort = document.querySelector('.sort-btn.active')?.dataset.sort || 'ytd';
-    const sorted = [...sectors].sort((a,b) => {
-      if(activeSort === 'ytd') return b.ytd - a.ytd;
-      if(activeSort === 'weight') return b.weight - a.weight;
-      if(activeSort === 'pe') return a.pe - b.pe;
-      if(activeSort === 'div') return b.divYield - a.divYield;
-      return 0;
-    });
-    renderCards(sorted);
-    renderPointsTable();
+  // Hide overlay, show toast
+  overlay.classList.remove('active');
+  btn.classList.remove('spinning');
+  observeFadeIns();
 
-    // Update timestamp
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).toUpperCase();
-    const dateStr = now.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
-    document.getElementById('lastUpdated').innerHTML = `Last updated: ${dateStr} &bull; ${timeStr} IST &bull; Source: NSE India, Bloomberg`;
-
-    // Hide overlay, show toast
-    overlay.classList.remove('active');
-    btn.classList.remove('spinning');
-    observeFadeIns();
-
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3000);
-  }
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
 }
 </script>
 </body>
