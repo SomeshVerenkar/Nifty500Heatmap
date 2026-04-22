@@ -288,10 +288,15 @@ header p{color:var(--text-dim);font-size:.95rem;margin-top:8px}
      SORT CONTROLS
      ═══════════════════════════════════════════════════════ -->
 <div class="controls fade-in">
-  <button class="sort-btn active" data-sort="ytd">Sort: YTD %</button>
-  <button class="sort-btn" data-sort="weight">Sort: Weight</button>
-  <button class="sort-btn" data-sort="pe">Sort: P/E</button>
-  <button class="sort-btn" data-sort="div">Sort: Div Yield</button>
+  <button class="sort-btn" data-period="oneD">1D</button>
+  <button class="sort-btn" data-period="oneM">1M</button>
+  <button class="sort-btn" data-period="threeM">3M</button>
+  <button class="sort-btn" data-period="sixM">6M</button>
+  <button class="sort-btn" data-period="oneY">1Y</button>
+  <button class="sort-btn active" data-period="ytd">YTD</button>
+  <button class="sort-btn" data-period="threeY">3Y</button>
+  <button class="sort-btn" data-period="fiveY">5Y</button>
+  <button class="sort-btn" data-period="tenY">10Y</button>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════
@@ -322,7 +327,7 @@ header p{color:var(--text-dim);font-size:.95rem;margin-top:8px}
       <tr>
         <th>Sector</th>
         <th>Index Points</th>
-        <th>YTD %</th>
+        <th id="returnHeader">YTD %</th>
         <th>Momentum Score</th>
         <th>Earnings Growth</th>
         <th>2× Potential (6M)</th>
@@ -374,143 +379,121 @@ header p{color:var(--text-dim);font-size:.95rem;margin-top:8px}
 const sectors = [
   {
     name:"Financials", icon:"🏦", etf:"NIFTY_FIN_SERVICE", weight:33.2,
-    ytd:-2.95, sixM:-1.8, oneY:5.4, pe:16.9, divYield:1.2, rating:"Hold",
+    oneD:1.18, oneM:3.4, threeM:5.2, sixM:-1.8, oneY:5.4, ytd:-2.95, threeY:28.5, fiveY:72.4, tenY:185.6,
+    pe:16.9, divYield:1.2, rating:"Hold",
     indexPoints:26851,
     momentum:45, earningsGrowth:"+18%", potential:"Medium",
-    holdings:[
-      {name:"HDFC Bank",weight:"13.4%"},{name:"ICICI Bank",weight:"9.8%"},
-      {name:"SBI",weight:"4.2%"},{name:"Kotak Mahindra",weight:"3.8%"},{name:"Axis Bank",weight:"3.1%"}
-    ],
+    holdings:[{name:"HDFC Bank",weight:"13.4%"},{name:"ICICI Bank",weight:"9.8%"},{name:"SBI",weight:"4.2%"},{name:"Kotak Mahindra",weight:"3.8%"},{name:"Axis Bank",weight:"3.1%"}],
     mcap:{mega:62,large:25,mid:13},
     range:{low:23374,high:28563,current:26851},
     perf:"mild-red"
   },
   {
     name:"Information Technology", icon:"💻", etf:"NIFTY_IT", weight:13.1,
-    ytd:-16.88, sixM:-10.2, oneY:-4.8, pe:26.8, divYield:2.1, rating:"Sell",
+    oneD:0.45, oneM:-2.8, threeM:-8.5, sixM:-10.2, oneY:-4.8, ytd:-16.88, threeY:-12.4, fiveY:48.2, tenY:320.5,
+    pe:26.8, divYield:2.1, rating:"Sell",
     indexPoints:31729,
     momentum:18, earningsGrowth:"+8%", potential:"Low",
-    holdings:[
-      {name:"TCS",weight:"5.1%"},{name:"Infosys",weight:"4.6%"},
-      {name:"HCL Tech",weight:"1.8%"},{name:"Wipro",weight:"1.1%"},{name:"Tech Mahindra",weight:"0.9%"}
-    ],
+    holdings:[{name:"TCS",weight:"5.1%"},{name:"Infosys",weight:"4.6%"},{name:"HCL Tech",weight:"1.8%"},{name:"Wipro",weight:"1.1%"},{name:"Tech Mahindra",weight:"0.9%"}],
     mcap:{mega:72,large:20,mid:8},
     range:{low:28288,high:40301,current:31729},
     perf:"strong-red"
   },
   {
     name:"Energy", icon:"⚡", etf:"NIFTY_ENERGY", weight:11.8,
-    ytd:10.79, sixM:16.4, oneY:19.9, pe:12.4, divYield:2.6, rating:"Buy",
+    oneD:0.39, oneM:4.8, threeM:8.2, sixM:16.4, oneY:19.9, ytd:10.79, threeY:62.3, fiveY:118.5, tenY:156.8,
+    pe:12.4, divYield:2.6, rating:"Buy",
     indexPoints:39337,
     momentum:88, earningsGrowth:"+24%", potential:"High",
-    holdings:[
-      {name:"Reliance Ind.",weight:"6.2%"},{name:"ONGC",weight:"1.8%"},
-      {name:"NTPC",weight:"1.5%"},{name:"Power Grid",weight:"1.2%"},{name:"BPCL",weight:"0.9%"}
-    ],
+    holdings:[{name:"Reliance Ind.",weight:"6.2%"},{name:"ONGC",weight:"1.8%"},{name:"NTPC",weight:"1.5%"},{name:"Power Grid",weight:"1.2%"},{name:"BPCL",weight:"0.9%"}],
     mcap:{mega:58,large:28,mid:14},
     range:{low:32792,high:39579,current:39337},
     perf:"strong-green"
   },
   {
     name:"Consumer Staples", icon:"🛒", etf:"NIFTY_FMCG", weight:8.4,
-    ytd:-5.40, sixM:-4.2, oneY:-3.5, pe:40.5, divYield:1.6, rating:"Hold",
+    oneD:2.55, oneM:1.2, threeM:-2.1, sixM:-4.2, oneY:-3.5, ytd:-5.40, threeY:8.6, fiveY:42.8, tenY:195.3,
+    pe:40.5, divYield:1.6, rating:"Hold",
     indexPoints:50820,
     momentum:38, earningsGrowth:"+10%", potential:"Low",
-    holdings:[
-      {name:"Hindustan Unilever",weight:"3.1%"},{name:"ITC",weight:"2.8%"},
-      {name:"Nestlé India",weight:"0.9%"},{name:"Dabur India",weight:"0.6%"},{name:"Britannia",weight:"0.5%"}
-    ],
+    holdings:[{name:"Hindustan Unilever",weight:"3.1%"},{name:"ITC",weight:"2.8%"},{name:"Nestlé India",weight:"0.9%"},{name:"Dabur India",weight:"0.6%"},{name:"Britannia",weight:"0.5%"}],
     mcap:{mega:55,large:30,mid:15},
     range:{low:45334,high:58485,current:50820},
     perf:"red"
   },
   {
     name:"Consumer Discretionary", icon:"🛍️", etf:"NIFTY_AUTO", weight:7.6,
-    ytd:-6.51, sixM:-3.4, oneY:2.6, pe:32.4, divYield:0.7, rating:"Hold",
+    oneD:0.39, oneM:2.1, threeM:-1.8, sixM:-3.4, oneY:2.6, ytd:-6.51, threeY:45.2, fiveY:98.6, tenY:268.4,
+    pe:32.4, divYield:0.7, rating:"Hold",
     indexPoints:26625,
     momentum:35, earningsGrowth:"+14%", potential:"Low",
-    holdings:[
-      {name:"M&M",weight:"1.8%"},{name:"Maruti Suzuki",weight:"1.4%"},
-      {name:"Titan Company",weight:"1.2%"},{name:"Trent",weight:"1.0%"},{name:"Bajaj Auto",weight:"0.8%"}
-    ],
+    holdings:[{name:"M&M",weight:"1.8%"},{name:"Maruti Suzuki",weight:"1.4%"},{name:"Titan Company",weight:"1.2%"},{name:"Trent",weight:"1.0%"},{name:"Bajaj Auto",weight:"0.8%"}],
     mcap:{mega:42,large:35,mid:23},
     range:{low:21885,high:29179,current:26625},
     perf:"red"
   },
   {
     name:"Healthcare", icon:"💊", etf:"NIFTY_PHARMA", weight:5.2,
-    ytd:-0.86, sixM:3.2, oneY:9.1, pe:32.6, divYield:0.8, rating:"Hold",
+    oneD:-0.08, oneM:1.5, threeM:2.8, sixM:3.2, oneY:9.1, ytd:-0.86, threeY:32.4, fiveY:85.2, tenY:210.6,
+    pe:32.6, divYield:0.8, rating:"Hold",
     indexPoints:22438,
     momentum:48, earningsGrowth:"+12%", potential:"Medium",
-    holdings:[
-      {name:"Sun Pharma",weight:"1.8%"},{name:"Dr.Reddy's",weight:"1.1%"},
-      {name:"Cipla",weight:"0.7%"},{name:"Divi's Labs",weight:"0.6%"},{name:"Apollo Hospitals",weight:"0.5%"}
-    ],
+    holdings:[{name:"Sun Pharma",weight:"1.8%"},{name:"Dr.Reddy's",weight:"1.1%"},{name:"Cipla",weight:"0.7%"},{name:"Divi's Labs",weight:"0.6%"},{name:"Apollo Hospitals",weight:"0.5%"}],
     mcap:{mega:38,large:36,mid:26},
     range:{low:20576,high:23541,current:22438},
     perf:"mild-red"
   },
   {
     name:"Industrials", icon:"🏗️", etf:"NIFTY_INFRA", weight:6.9,
-    ytd:-3.38, sixM:-1.8, oneY:5.0, pe:28.5, divYield:1.1, rating:"Hold",
+    oneD:0.35, oneM:2.8, threeM:1.4, sixM:-1.8, oneY:5.0, ytd:-3.38, threeY:52.8, fiveY:105.4, tenY:178.2,
+    pe:28.5, divYield:1.1, rating:"Hold",
     indexPoints:9352,
     momentum:42, earningsGrowth:"+22%", potential:"Medium",
-    holdings:[
-      {name:"L&T",weight:"2.8%"},{name:"HAL",weight:"1.2%"},
-      {name:"Siemens",weight:"0.8%"},{name:"ABB India",weight:"0.7%"},{name:"Adani Ports",weight:"0.6%"}
-    ],
+    holdings:[{name:"L&T",weight:"2.8%"},{name:"HAL",weight:"1.2%"},{name:"Siemens",weight:"0.8%"},{name:"ABB India",weight:"0.7%"},{name:"Adani Ports",weight:"0.6%"}],
     mcap:{mega:35,large:38,mid:27},
     range:{low:8427,high:9793,current:9352},
     perf:"mild-red"
   },
   {
     name:"Materials", icon:"⛏️", etf:"NIFTY_METAL", weight:4.8,
-    ytd:14.03, sixM:22.8, oneY:55.4, pe:13.8, divYield:2.0, rating:"Buy",
+    oneD:0.04, oneM:5.6, threeM:12.4, sixM:22.8, oneY:55.4, ytd:14.03, threeY:78.5, fiveY:142.6, tenY:198.4,
+    pe:13.8, divYield:2.0, rating:"Buy",
     indexPoints:12835,
     momentum:92, earningsGrowth:"+28%", potential:"High",
-    holdings:[
-      {name:"JSW Steel",weight:"1.4%"},{name:"Tata Steel",weight:"1.1%"},
-      {name:"Hindalco",weight:"0.9%"},{name:"UltraTech Cement",weight:"0.8%"},{name:"Grasim",weight:"0.7%"}
-    ],
+    holdings:[{name:"JSW Steel",weight:"1.4%"},{name:"Tata Steel",weight:"1.1%"},{name:"Hindalco",weight:"0.9%"},{name:"UltraTech Cement",weight:"0.8%"},{name:"Grasim",weight:"0.7%"}],
     mcap:{mega:28,large:42,mid:30},
     range:{low:8256,high:12987,current:12835},
     perf:"strong-green"
   },
   {
     name:"Utilities", icon:"🔌", etf:"NIFTY_PSE (proxy)", weight:3.8,
-    ytd:10.79, sixM:16.4, oneY:19.9, pe:18.6, divYield:2.8, rating:"Buy",
+    oneD:0.52, oneM:4.2, threeM:7.8, sixM:16.4, oneY:19.9, ytd:10.79, threeY:68.4, fiveY:125.8, tenY:165.2,
+    pe:18.6, divYield:2.8, rating:"Buy",
     indexPoints:12840,
     momentum:85, earningsGrowth:"+26%", potential:"High",
-    holdings:[
-      {name:"NTPC",weight:"1.2%"},{name:"Power Grid Corp",weight:"0.9%"},
-      {name:"Adani Green",weight:"0.6%"},{name:"Tata Power",weight:"0.5%"},{name:"JSW Energy",weight:"0.4%"}
-    ],
+    holdings:[{name:"NTPC",weight:"1.2%"},{name:"Power Grid Corp",weight:"0.9%"},{name:"Adani Green",weight:"0.6%"},{name:"Tata Power",weight:"0.5%"},{name:"JSW Energy",weight:"0.4%"}],
     mcap:{mega:30,large:40,mid:30},
     range:{low:9200,high:13600,current:12840},
     perf:"strong-green"
   },
   {
     name:"Real Estate", icon:"🏢", etf:"NIFTY_REALTY", weight:2.8,
-    ytd:-9.78, sixM:-5.8, oneY:-7.2, pe:42.8, divYield:0.4, rating:"Hold",
+    oneD:2.14, oneM:3.8, threeM:-2.4, sixM:-5.8, oneY:-7.2, ytd:-9.78, threeY:42.6, fiveY:65.8, tenY:82.4,
+    pe:42.8, divYield:0.4, rating:"Hold",
     indexPoints:799,
     momentum:32, earningsGrowth:"+10%", potential:"Low",
-    holdings:[
-      {name:"DLF",weight:"0.8%"},{name:"Macrotech (Lodha)",weight:"0.7%"},
-      {name:"Godrej Properties",weight:"0.5%"},{name:"Prestige Estates",weight:"0.4%"},{name:"Oberoi Realty",weight:"0.3%"}
-    ],
+    holdings:[{name:"DLF",weight:"0.8%"},{name:"Macrotech (Lodha)",weight:"0.7%"},{name:"Godrej Properties",weight:"0.5%"},{name:"Prestige Estates",weight:"0.4%"},{name:"Oberoi Realty",weight:"0.3%"}],
     mcap:{mega:15,large:40,mid:45},
     range:{low:639,high:1050,current:799},
     perf:"red"
   },
   {
     name:"Communication Services", icon:"📡", etf:"NIFTY_MEDIA", weight:2.4,
-    ytd:-0.37, sixM:-2.1, oneY:-10.2, pe:68.4, divYield:0.3, rating:"Hold",
+    oneD:0.97, oneM:2.4, threeM:-1.2, sixM:-2.1, oneY:-10.2, ytd:-0.37, threeY:-18.5, fiveY:-8.4, tenY:45.6,
+    pe:68.4, divYield:0.3, rating:"Hold",
     indexPoints:1443,
     momentum:48, earningsGrowth:"+6%", potential:"Low",
-    holdings:[
-      {name:"Bharti Airtel",weight:"1.4%"},{name:"Indus Towers",weight:"0.3%"},
-      {name:"Zee Entertainment",weight:"0.2%"},{name:"PVR INOX",weight:"0.2%"},{name:"Nazara Tech",weight:"0.1%"}
-    ],
+    holdings:[{name:"Bharti Airtel",weight:"1.4%"},{name:"Indus Towers",weight:"0.3%"},{name:"Zee Entertainment",weight:"0.2%"},{name:"PVR INOX",weight:"0.2%"},{name:"Nazara Tech",weight:"0.1%"}],
     mcap:{mega:65,large:20,mid:15},
     range:{low:1245,high:1786,current:1443},
     perf:"mild-red"
@@ -591,26 +574,30 @@ async function fetchLiveIndices(){
   return results.map(r => r.status === 'fulfilled' ? r.value : null).filter(Boolean);
 }
 
+/* Period labels map */
+const periodLabels = {
+  oneD:'1D', oneM:'1M', threeM:'3M', sixM:'6M', oneY:'1Y', ytd:'YTD', threeY:'3Y', fiveY:'5Y', tenY:'10Y'
+};
+let activePeriod = 'ytd';
+
+function getReturn(s){ return s[activePeriod]; }
+
 /* ═══════════════════════════════════════════════════════
    RENDER SECTOR CARDS
    ═══════════════════════════════════════════════════════ */
 function renderCards(data){
   const grid = document.getElementById('sectorGrid');
   grid.innerHTML = '';
+  const pLabel = periodLabels[activePeriod];
   data.forEach((s,i) => {
-    const ytdClass = s.ytd >= 0 ? 'green' : 'red';
-    const sixMClass = s.sixM >= 0 ? 'green' : 'red';
-    const oneYClass = s.oneY >= 0 ? 'green' : 'red';
+    const ret = getReturn(s);
+    const retClass = ret >= 0 ? 'green' : 'red';
     const sign = v => v >= 0 ? '+' : '';
     const rangePercent = ((s.range.current - s.range.low) / (s.range.high - s.range.low)) * 100;
 
     const card = document.createElement('div');
     card.className = 'sector-card fade-in';
     card.setAttribute('data-perf', s.perf);
-    card.setAttribute('data-ytd', s.ytd);
-    card.setAttribute('data-weight', s.weight);
-    card.setAttribute('data-pe', s.pe);
-    card.setAttribute('data-div', s.divYield);
     card.style.animationDelay = `${i * 80}ms`;
 
     card.innerHTML = `
@@ -621,14 +608,14 @@ function renderCards(data){
           <div class="etf-ticker">${s.etf} &bull; Wt: ${s.weight}%</div>
         </div>
         <div class="right">
-          <div class="ytd-value ${ytdClass}">${sign(s.ytd)}${s.ytd}%</div>
-          <div class="weight-label">YTD Return</div>
+          <div class="ytd-value ${retClass}">${sign(ret)}${ret}%</div>
+          <div class="weight-label">${pLabel} Return</div>
         </div>
       </div>
 
       <div class="stats-row">
-        <div class="stat"><div class="stat-label">6M Return</div><div class="stat-value ${sixMClass}">${sign(s.sixM)}${s.sixM}%</div></div>
-        <div class="stat"><div class="stat-label">1Y Return</div><div class="stat-value ${oneYClass}">${sign(s.oneY)}${s.oneY}%</div></div>
+        <div class="stat"><div class="stat-label">1D</div><div class="stat-value ${s.oneD >= 0 ? 'green' : 'red'}">${sign(s.oneD)}${s.oneD}%</div></div>
+        <div class="stat"><div class="stat-label">1M</div><div class="stat-value ${s.oneM >= 0 ? 'green' : 'red'}">${sign(s.oneM)}${s.oneM}%</div></div>
         <div class="stat"><div class="stat-label">P/E Ratio</div><div class="stat-value">${s.pe}×</div></div>
       </div>
 
@@ -681,14 +668,18 @@ function renderCards(data){
    ═══════════════════════════════════════════════════════ */
 function renderPointsTable(){
   const body = document.getElementById('pointsBody');
-  const sorted = [...sectors].sort((a,b) => b.ytd - a.ytd);
+  const pLabel = periodLabels[activePeriod];
+  const hdr = document.getElementById('returnHeader');
+  if(hdr) hdr.textContent = pLabel + ' %';
+  const sorted = [...sectors].sort((a,b) => getReturn(b) - getReturn(a));
   body.innerHTML = sorted.map(s => {
-    const cls = s.ytd >= 0 ? 'green' : 'red';
+    const ret = getReturn(s);
+    const cls = ret >= 0 ? 'green' : 'red';
     const potCls = s.potential.includes('High') || s.potential.includes('Very') ? 'green' : s.potential === 'Medium' ? 'yellow' : 'red';
     return `<tr>
       <td class="sector-col">${s.icon} ${s.name}</td>
       <td class="points-col">${s.indexPoints.toLocaleString()}</td>
-      <td class="${cls}" style="font-family:var(--font-mono);font-weight:600">${s.ytd >= 0 ? '+' : ''}${s.ytd}%</td>
+      <td class="${cls}" style="font-family:var(--font-mono);font-weight:600">${ret >= 0 ? '+' : ''}${ret}%</td>
       <td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;background:#1e2330;height:6px;border-radius:3px;overflow:hidden"><div style="height:100%;width:${s.momentum}%;background:${s.momentum > 70 ? 'var(--green-strong)' : s.momentum > 50 ? 'var(--yellow)' : 'var(--red-mid)'};border-radius:3px"></div></div><span class="mono" style="font-size:.78rem">${s.momentum}</span></div></td>
       <td class="mono" style="color:var(--green-strong)">${s.earningsGrowth}</td>
       <td class="${potCls}" style="font-weight:600">${s.potential}</td>
@@ -716,22 +707,21 @@ function renderTop3(){
 }
 
 /* ═══════════════════════════════════════════════════════
-   SORTING
+   TIMEFRAME FILTER
    ═══════════════════════════════════════════════════════ */
+function sortAndRender(){
+  const sorted = [...sectors].sort((a,b) => getReturn(b) - getReturn(a));
+  renderCards(sorted);
+  renderPointsTable();
+  observeFadeIns();
+}
+
 document.querySelectorAll('.sort-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    const key = btn.dataset.sort;
-    const sorted = [...sectors].sort((a,b) => {
-      if(key === 'ytd') return b.ytd - a.ytd;
-      if(key === 'weight') return b.weight - a.weight;
-      if(key === 'pe') return a.pe - b.pe;
-      if(key === 'div') return b.divYield - a.divYield;
-      return 0;
-    });
-    renderCards(sorted);
-    observeFadeIns();
+    activePeriod = btn.dataset.period;
+    sortAndRender();
   });
 });
 
@@ -754,7 +744,7 @@ function observeFadeIns(){
 /* ═══════════════════════════════════════════════════════
    INIT
    ═══════════════════════════════════════════════════════ */
-const sortedByYTD = [...sectors].sort((a,b) => b.ytd - a.ytd);
+const sortedByYTD = [...sectors].sort((a,b) => getReturn(b) - getReturn(a));
 renderCards(sortedByYTD);
 renderPointsTable();
 renderTop3();
@@ -838,17 +828,8 @@ async function refreshData(){
     }
   });
 
-  // Re-sort & re-render based on current active sort
-  const activeSort = document.querySelector('.sort-btn.active')?.dataset.sort || 'ytd';
-  const sorted = [...sectors].sort((a,b) => {
-    if(activeSort === 'ytd') return b.ytd - a.ytd;
-    if(activeSort === 'weight') return b.weight - a.weight;
-    if(activeSort === 'pe') return a.pe - b.pe;
-    if(activeSort === 'div') return b.divYield - a.divYield;
-    return 0;
-  });
-  renderCards(sorted);
-  renderPointsTable();
+// Re-sort & re-render based on current active period
+    sortAndRender();
 
   // Update timestamp
   const now = new Date();
