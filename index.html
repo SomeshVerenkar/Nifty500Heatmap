@@ -574,6 +574,109 @@ async function fetchLiveIndices(){
   return results.map(r => r.status === 'fulfilled' ? r.value : null).filter(Boolean);
 }
 
+/* ═══════════════════════════════════════════════════════
+   LIVE SECTOR DATA FETCH (Yahoo Finance via CORS proxy)
+   Fetches real returns for all 11 GICS sectors
+   ═══════════════════════════════════════════════════════ */
+const sectorSymbols = {
+  'Financials':'NIFTY_FIN_SERVICE.NS',
+  'Information Technology':'%5ECNXIT',
+  'Energy':'%5ECNXENERGY',
+  'Consumer Staples':'%5ECNXFMCG',
+  'Consumer Discretionary':'%5ECNXAUTO',
+  'Healthcare':'%5ECNXPHARMA',
+  'Industrials':'%5ECNXINFRA',
+  'Materials':'%5ECNXMETAL',
+  'Utilities':'%5ECNXPSE',
+  'Real Estate':'%5ECNXREALTY',
+  'Communication Services':'%5ECNXMEDIA'
+};
+
+async function fetchSectorReturns(){
+  const proxies = [
+    u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+    u => 'https://corsproxy.io/?' + encodeURIComponent(u)
+  ];
+  const results = await Promise.allSettled(sectors.map(async sector => {
+    const sym = sectorSymbols[sector.name];
+    if(!sym) return null;
+    const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + sym + '?range=10y&interval=1mo';
+    for(const mkProxy of proxies){
+      try{
+        const ctrl = new AbortController();
+        const tmr = setTimeout(() => ctrl.abort(), 10000);
+        const resp = await fetch(mkProxy(url), {signal: ctrl.signal});
+        clearTimeout(tmr);
+        if(!resp.ok) continue;
+        const json = await resp.json();
+        const res = json?.chart?.result?.[0];
+        if(!res) continue;
+        const meta = res.meta;
+        const ts = res.timestamp;
+        const cls = res.indicators?.quote?.[0]?.close;
+        if(!ts || !cls || !meta?.regularMarketPrice) continue;
+        const curPrice = meta.regularMarketPrice;
+        const prevClose = meta.chartPreviousClose || meta.previousClose;
+        // Find last close at or before a target date
+        function closeBefore(targetDate){
+          const tgt = targetDate.getTime() / 1000;
+          for(let i = ts.length - 1; i >= 0; i--){
+            if(ts[i] <= tgt && cls[i] != null) return cls[i];
+          }
+          return null;
+        }
+        function pctRet(base){ return base ? +((curPrice - base) / base * 100).toFixed(2) : null; }
+        const now = new Date();
+        const d1M = new Date(now); d1M.setMonth(d1M.getMonth() - 1);
+        const d3M = new Date(now); d3M.setMonth(d3M.getMonth() - 3);
+        const d6M = new Date(now); d6M.setMonth(d6M.getMonth() - 6);
+        const d1Y = new Date(now); d1Y.setFullYear(d1Y.getFullYear() - 1);
+        const d3Y = new Date(now); d3Y.setFullYear(d3Y.getFullYear() - 3);
+        const d5Y = new Date(now); d5Y.setFullYear(d5Y.getFullYear() - 5);
+        const d10Y = new Date(now); d10Y.setFullYear(d10Y.getFullYear() - 10);
+        const jan1 = new Date(now.getFullYear(), 0, 1);
+        return {
+          name: sector.name, curPrice,
+          w52High: meta.fiftyTwoWeekHigh, w52Low: meta.fiftyTwoWeekLow,
+          oneD: prevClose ? pctRet(prevClose) : null,
+          oneM: pctRet(closeBefore(d1M)), threeM: pctRet(closeBefore(d3M)),
+          sixM: pctRet(closeBefore(d6M)), oneY: pctRet(closeBefore(d1Y)),
+          ytd: pctRet(closeBefore(jan1)), threeY: pctRet(closeBefore(d3Y)),
+          fiveY: pctRet(closeBefore(d5Y)), tenY: pctRet(closeBefore(d10Y))
+        };
+      }catch(e){ continue; }
+    }
+    return null;
+  }));
+  let count = 0;
+  results.forEach(r => {
+    if(r.status !== 'fulfilled' || !r.value) return;
+    const d = r.value, s = sectors.find(x => x.name === d.name);
+    if(!s) return;
+    if(d.oneD != null) s.oneD = d.oneD;
+    if(d.oneM != null) s.oneM = d.oneM;
+    if(d.threeM != null) s.threeM = d.threeM;
+    if(d.sixM != null) s.sixM = d.sixM;
+    if(d.oneY != null) s.oneY = d.oneY;
+    if(d.ytd != null) s.ytd = d.ytd;
+    if(d.threeY != null) s.threeY = d.threeY;
+    if(d.fiveY != null) s.fiveY = d.fiveY;
+    if(d.tenY != null) s.tenY = d.tenY;
+    if(d.curPrice != null){ s.indexPoints = Math.round(d.curPrice); s.range.current = Math.round(d.curPrice); }
+    if(d.w52High != null) s.range.high = Math.round(d.w52High);
+    if(d.w52Low != null) s.range.low = Math.round(d.w52Low);
+    const ytd = s.ytd;
+    if(ytd > 10) s.perf = 'strong-green';
+    else if(ytd > 5) s.perf = 'green';
+    else if(ytd > 0) s.perf = 'mild-green';
+    else if(ytd > -3) s.perf = 'mild-red';
+    else if(ytd > -8) s.perf = 'red';
+    else s.perf = 'strong-red';
+    count++;
+  });
+  return count;
+}
+
 /* Period labels map */
 const periodLabels = {
   oneD:'1D', oneM:'1M', threeM:'3M', sixM:'6M', oneY:'1Y', ytd:'YTD', threeY:'3Y', fiveY:'5Y', tenY:'10Y'
@@ -750,22 +853,30 @@ renderPointsTable();
 renderTop3();
 observeFadeIns();
 
-/* ═══════════════════════════════════════════════════════
-   REFRESH — simulate intraday micro-fluctuations
-   ═══════════════════════════════════════════════════════ */
-function jitter(val, range){
-  return +(val + (Math.random() * 2 - 1) * range).toFixed(2);
-}
-function jitterInt(val, range){
-  return Math.round(val + (Math.random() * 2 - 1) * range);
-}
+// Auto-fetch live data on page load
+(async function(){
+  try{
+    const count = await fetchSectorReturns();
+    if(count > 0){
+      sortAndRender();
+      const now = new Date();
+      const t = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).toUpperCase();
+      const d = now.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+      document.getElementById('lastUpdated').innerHTML = 'Last updated: '+d+' &bull; '+t+' IST &bull; Source: Yahoo Finance (Live)';
+      console.log('✅ Live sector data loaded for '+count+'/11 sectors');
+    }
+  }catch(e){ console.warn('⚠️ Live fetch failed, using cached data', e); }
+})();
 
+/* ═══════════════════════════════════════════════════════
+   REFRESH — fetch real live data from Yahoo Finance
+   ═══════════════════════════════════════════════════════ */
 const loaderMessages = [
   'Fetching latest market data...',
   'Pulling NIFTY sectoral indices...',
   'Updating P/E ratios & yields...',
   'Recalculating sector weights...',
-  'Applying intraday price changes...',
+  'Applying live price changes...',
   'Finalizing heatmap refresh...'
 ];
 
@@ -780,7 +891,8 @@ async function refreshData(){
   overlay.classList.add('active');
   bar.style.width = '0%';
 
-  // Start live fetch in parallel with loader animation
+  // Start both fetches in parallel with loader animation
+  const sectorFetch = fetchSectorReturns();
   const liveFetch = fetchLiveIndices();
 
   // Animate progress bar
@@ -795,27 +907,19 @@ async function refreshData(){
     }, 450);
   });
 
-  let liveResults;
-  try { liveResults = await liveFetch; } catch(e) { liveResults = []; }
-  console.log(liveResults.some(r => r.live) ? '✅ Live market data fetched' : '⚠️ Using cached data (API unavailable)');
+  let sectorCount = 0;
+  try{ sectorCount = await sectorFetch; }catch(e){}
+  let liveResults = [];
+  try{ liveResults = await liveFetch; }catch(e){}
 
-  // Apply micro-fluctuations to sector data
-  sectors.forEach(s => {
-    s.ytd = jitter(s.ytd, 0.35);
-    s.sixM = jitter(s.sixM, 0.25);
-    s.oneY = jitter(s.oneY, 0.2);
-    s.pe = jitter(s.pe, 0.15);
-    s.divYield = jitter(s.divYield, 0.05);
-    s.indexPoints = jitterInt(s.indexPoints, s.indexPoints * 0.003);
-    s.momentum = Math.min(99, Math.max(10, jitterInt(s.momentum, 2)));
-    s.range.current = jitterInt(s.range.current, s.range.current * 0.004);
-  });
+  const isLive = sectorCount > 0 || liveResults.some(r => r.live);
+  console.log(isLive ? '✅ Live data: '+sectorCount+' sectors + indices' : '⚠️ Using cached data');
 
-  // Update index pills with live data (or corrected fallbacks)
+  // Update index pills with live data
   const pills = document.querySelectorAll('.pill .value');
   const pillChanges = document.querySelectorAll('.pill .change');
   liveResults.forEach(idx => {
-    const price = idx.live ? idx.price : jitter(idx.price, idx.price * 0.001);
+    const price = idx.price;
     const change = ((price - idx.prevClose) / idx.prevClose * 100);
     if(pills[idx.pillIdx]){
       pills[idx.pillIdx].textContent = idx.pillIdx === 3
@@ -828,14 +932,14 @@ async function refreshData(){
     }
   });
 
-// Re-sort & re-render based on current active period
+    // Re-sort & re-render based on current active period
     sortAndRender();
 
   // Update timestamp
   const now = new Date();
   const timeStr = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).toUpperCase();
   const dateStr = now.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
-  const src = liveResults.some(r => r.live) ? 'Live: Yahoo Finance' : 'NSE India, Google Finance';
+  const src = isLive ? 'Yahoo Finance (Live)' : 'NSE India, Google Finance';
   document.getElementById('lastUpdated').innerHTML = `Last updated: ${dateStr} &bull; ${timeStr} IST &bull; Source: ${src}`;
 
   // Hide overlay, show toast
