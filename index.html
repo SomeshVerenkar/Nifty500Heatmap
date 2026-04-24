@@ -577,77 +577,127 @@ async function fetchLiveIndices(){
 /* ═══════════════════════════════════════════════════════
    LIVE SECTOR DATA FETCH (Yahoo Finance via CORS proxy)
    Fetches real returns for all 11 GICS sectors
+   Uses daily data for short-term, monthly for long-term
    ═══════════════════════════════════════════════════════ */
 const sectorSymbols = {
   'Financials':'NIFTY_FIN_SERVICE.NS',
-  'Information Technology':'%5ECNXIT',
-  'Energy':'%5ECNXENERGY',
-  'Consumer Staples':'%5ECNXFMCG',
-  'Consumer Discretionary':'%5ECNXAUTO',
-  'Healthcare':'%5ECNXPHARMA',
-  'Industrials':'%5ECNXINFRA',
-  'Materials':'%5ECNXMETAL',
-  'Utilities':'%5ECNXPSE',
-  'Real Estate':'%5ECNXREALTY',
-  'Communication Services':'%5ECNXMEDIA'
+  'Information Technology':'^CNXIT',
+  'Energy':'^CNXENERGY',
+  'Consumer Staples':'^CNXFMCG',
+  'Consumer Discretionary':'^CNXAUTO',
+  'Healthcare':'^CNXPHARMA',
+  'Industrials':'^CNXINFRA',
+  'Materials':'^CNXMETAL',
+  'Utilities':'^CNXPSE',
+  'Real Estate':'^CNXREALTY',
+  'Communication Services':'^CNXMEDIA'
 };
 
+const PROXIES = [
+  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+  u => 'https://corsproxy.io/?' + encodeURIComponent(u)
+];
+
+async function fetchChart(sym, range, interval){
+  const url = 'https://query1.finance.yahoo.com/v8/finance/chart/'
+    + encodeURIComponent(sym) + '?range=' + range + '&interval=' + interval;
+  for(const mkProxy of PROXIES){
+    try{
+      const ctrl = new AbortController();
+      const tmr = setTimeout(() => ctrl.abort(), 12000);
+      const resp = await fetch(mkProxy(url), {signal: ctrl.signal});
+      clearTimeout(tmr);
+      if(!resp.ok) continue;
+      const json = await resp.json();
+      const res = json?.chart?.result?.[0];
+      if(res?.timestamp && res?.indicators?.quote?.[0]?.close && res?.meta?.regularMarketPrice) return res;
+    }catch(e){ continue; }
+  }
+  return null;
+}
+
+// Find the close value nearest to a target date
+function closeNear(ts, cls, targetDate){
+  const tgt = targetDate.getTime() / 1000;
+  let bestIdx = -1, bestDiff = Infinity;
+  for(let i = 0; i < ts.length; i++){
+    if(cls[i] == null) continue;
+    const diff = Math.abs(ts[i] - tgt);
+    if(diff < bestDiff){ bestDiff = diff; bestIdx = i; }
+  }
+  return bestIdx >= 0 ? cls[bestIdx] : null;
+}
+
 async function fetchSectorReturns(){
-  const proxies = [
-    u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
-    u => 'https://corsproxy.io/?' + encodeURIComponent(u)
-  ];
+  // 2 parallel API calls per sector: daily (1y) + monthly (10y)
   const results = await Promise.allSettled(sectors.map(async sector => {
     const sym = sectorSymbols[sector.name];
     if(!sym) return null;
-    const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + sym + '?range=10y&interval=1mo';
-    for(const mkProxy of proxies){
-      try{
-        const ctrl = new AbortController();
-        const tmr = setTimeout(() => ctrl.abort(), 10000);
-        const resp = await fetch(mkProxy(url), {signal: ctrl.signal});
-        clearTimeout(tmr);
-        if(!resp.ok) continue;
-        const json = await resp.json();
-        const res = json?.chart?.result?.[0];
-        if(!res) continue;
-        const meta = res.meta;
-        const ts = res.timestamp;
-        const cls = res.indicators?.quote?.[0]?.close;
-        if(!ts || !cls || !meta?.regularMarketPrice) continue;
-        const curPrice = meta.regularMarketPrice;
-        const prevClose = meta.chartPreviousClose || meta.previousClose;
-        // Find last close at or before a target date
-        function closeBefore(targetDate){
-          const tgt = targetDate.getTime() / 1000;
-          for(let i = ts.length - 1; i >= 0; i--){
-            if(ts[i] <= tgt && cls[i] != null) return cls[i];
-          }
-          return null;
-        }
-        function pctRet(base){ return base ? +((curPrice - base) / base * 100).toFixed(2) : null; }
-        const now = new Date();
+    const [daily, monthly] = await Promise.all([
+      fetchChart(sym, '1y', '1d'),
+      fetchChart(sym, '10y', '1mo')
+    ]);
+    if(!daily && !monthly) return null;
+    const meta = (daily || monthly).meta;
+    const curPrice = meta.regularMarketPrice;
+    function pctRet(base){ return base ? +((curPrice - base) / base * 100).toFixed(2) : null; }
+    const now = new Date();
+    let oneD=null, oneM=null, threeM=null, sixM=null, oneY=null, ytd=null;
+    let threeY=null, fiveY=null, tenY=null;
+
+    // ── Short-term from daily data (accurate to ±1 day) ──
+    if(daily){
+      const dTs = daily.timestamp;
+      const dCls = daily.indicators.quote[0].close;
+      // 1D: previous completed trading day's close vs current price
+      for(let i = dTs.length - 2; i >= 0; i--){
+        if(dCls[i] != null){ oneD = pctRet(dCls[i]); break; }
+      }
+      const d1M = new Date(now); d1M.setMonth(d1M.getMonth() - 1);
+      const d3M = new Date(now); d3M.setMonth(d3M.getMonth() - 3);
+      const d6M = new Date(now); d6M.setMonth(d6M.getMonth() - 6);
+      const jan1 = new Date(now.getFullYear(), 0, 2); // Jan 2 avoids holiday
+      oneM = pctRet(closeNear(dTs, dCls, d1M));
+      threeM = pctRet(closeNear(dTs, dCls, d3M));
+      sixM = pctRet(closeNear(dTs, dCls, d6M));
+      ytd = pctRet(closeNear(dTs, dCls, jan1));
+      // 1Y: earliest close in the 1-year range
+      for(let i = 0; i < dCls.length; i++){
+        if(dCls[i] != null){ oneY = pctRet(dCls[i]); break; }
+      }
+    }
+
+    // ── Long-term from monthly data ──
+    if(monthly){
+      const mTs = monthly.timestamp;
+      const mCls = monthly.indicators.quote[0].close;
+      const d3Y = new Date(now); d3Y.setFullYear(d3Y.getFullYear() - 3);
+      const d5Y = new Date(now); d5Y.setFullYear(d5Y.getFullYear() - 5);
+      const d10Y = new Date(now); d10Y.setFullYear(d10Y.getFullYear() - 10);
+      threeY = pctRet(closeNear(mTs, mCls, d3Y));
+      fiveY = pctRet(closeNear(mTs, mCls, d5Y));
+      tenY = pctRet(closeNear(mTs, mCls, d10Y));
+      // Fallback: fill short-term from monthly if daily fetch failed
+      if(!daily){
         const d1M = new Date(now); d1M.setMonth(d1M.getMonth() - 1);
         const d3M = new Date(now); d3M.setMonth(d3M.getMonth() - 3);
         const d6M = new Date(now); d6M.setMonth(d6M.getMonth() - 6);
         const d1Y = new Date(now); d1Y.setFullYear(d1Y.getFullYear() - 1);
-        const d3Y = new Date(now); d3Y.setFullYear(d3Y.getFullYear() - 3);
-        const d5Y = new Date(now); d5Y.setFullYear(d5Y.getFullYear() - 5);
-        const d10Y = new Date(now); d10Y.setFullYear(d10Y.getFullYear() - 10);
-        const jan1 = new Date(now.getFullYear(), 0, 1);
-        return {
-          name: sector.name, curPrice,
-          w52High: meta.fiftyTwoWeekHigh, w52Low: meta.fiftyTwoWeekLow,
-          oneD: prevClose ? pctRet(prevClose) : null,
-          oneM: pctRet(closeBefore(d1M)), threeM: pctRet(closeBefore(d3M)),
-          sixM: pctRet(closeBefore(d6M)), oneY: pctRet(closeBefore(d1Y)),
-          ytd: pctRet(closeBefore(jan1)), threeY: pctRet(closeBefore(d3Y)),
-          fiveY: pctRet(closeBefore(d5Y)), tenY: pctRet(closeBefore(d10Y))
-        };
-      }catch(e){ continue; }
+        const jan1 = new Date(now.getFullYear(), 0, 2);
+        oneM = pctRet(closeNear(mTs, mCls, d1M));
+        threeM = pctRet(closeNear(mTs, mCls, d3M));
+        sixM = pctRet(closeNear(mTs, mCls, d6M));
+        ytd = pctRet(closeNear(mTs, mCls, jan1));
+        oneY = pctRet(closeNear(mTs, mCls, d1Y));
+      }
     }
-    return null;
+    return {
+      name:sector.name, curPrice,
+      w52High:meta.fiftyTwoWeekHigh, w52Low:meta.fiftyTwoWeekLow,
+      oneD, oneM, threeM, sixM, oneY, ytd, threeY, fiveY, tenY
+    };
   }));
+
   let count = 0;
   results.forEach(r => {
     if(r.status !== 'fulfilled' || !r.value) return;
@@ -665,12 +715,12 @@ async function fetchSectorReturns(){
     if(d.curPrice != null){ s.indexPoints = Math.round(d.curPrice); s.range.current = Math.round(d.curPrice); }
     if(d.w52High != null) s.range.high = Math.round(d.w52High);
     if(d.w52Low != null) s.range.low = Math.round(d.w52Low);
-    const ytd = s.ytd;
-    if(ytd > 10) s.perf = 'strong-green';
-    else if(ytd > 5) s.perf = 'green';
-    else if(ytd > 0) s.perf = 'mild-green';
-    else if(ytd > -3) s.perf = 'mild-red';
-    else if(ytd > -8) s.perf = 'red';
+    const ytdVal = s.ytd;
+    if(ytdVal > 10) s.perf = 'strong-green';
+    else if(ytdVal > 5) s.perf = 'green';
+    else if(ytdVal > 0) s.perf = 'mild-green';
+    else if(ytdVal > -3) s.perf = 'mild-red';
+    else if(ytdVal > -8) s.perf = 'red';
     else s.perf = 'strong-red';
     count++;
   });
